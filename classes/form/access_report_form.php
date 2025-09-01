@@ -41,14 +41,14 @@ class access_report_form extends \moodleform {
         ]);
 
         // Fecha desde
-        $mform->addElement('date_selector', 'datefrom', get_string('from'), [
+        $mform->addElement('date_selector', 'datefrom', get_string('datefrom', 'local_cadreports'), [
             'startyear' => date('Y') - 1,
             'stopyear' => date('Y') + 1,
             'optional' => true
         ]);
 
         // Fecha hasta
-        $mform->addElement('date_selector', 'dateto', get_string('to'), [
+        $mform->addElement('date_selector', 'dateto', get_string('dateto', 'local_cadreports'), [
             'startyear' => date('Y') - 1,
             'stopyear' => date('Y') + 1,
             'optional' => true

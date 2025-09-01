@@ -104,7 +104,7 @@ abstract class cadreports_base {
 
         // Fechas
         $formhtml .= html_writer::start_tag('div', ['class' => 'col-md-2']);
-        $formhtml .= html_writer::tag('label', get_string('from'), ['class' => 'form-label']);
+        $formhtml .= html_writer::tag('label', get_string('datefrom', 'local_cadreports'), ['class' => 'form-label']);
         $formhtml .= html_writer::empty_tag('input', [
             'type' => 'date',
             'name' => 'datefrom',
@@ -114,7 +114,7 @@ abstract class cadreports_base {
         $formhtml .= html_writer::end_tag('div');
 
         $formhtml .= html_writer::start_tag('div', ['class' => 'col-md-2']);
-        $formhtml .= html_writer::tag('label', get_string('to'), ['class' => 'form-label']);
+        $formhtml .= html_writer::tag('label', get_string('dateto', 'local_cadreports'), ['class' => 'form-label']);
         $formhtml .= html_writer::empty_tag('input', [
             'type' => 'date',
             'name' => 'dateto',

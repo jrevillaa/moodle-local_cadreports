@@ -1,5 +1,9 @@
 <?php
-require_once('../../config.php');
+
+require_once('../../../config.php');
+global $CFG, $PAGE, $OUTPUT;
+$CFG->debug = E_ALL;
+$CFG->debugdisplay = 1;
 require_once($CFG->libdir.'/adminlib.php');
 require_once($CFG->dirroot.'/local/cadreports/classes/form/access_report_form.php');
 

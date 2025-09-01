@@ -59,3 +59,6 @@ $string['selectusers'] = 'Seleccionar usuarios...';
 $string['export'] = 'Exportar';
 $string['filter'] = 'Filtrar';
 $string['error:dateorder'] = 'La fecha inicial debe ser anterior a la fecha final';
+
+$string['datefrom'] = 'Desde';
+$string['dateto'] = 'Hasta';
