@@ -52,3 +52,10 @@ $string['activityreport'] = 'Actividad de Usuarios';
 $string['forumreport'] = 'Participación en Foros';
 $string['cadreports:view'] = 'Ver reportes CAD';
 $string['cadreports:export'] = 'Exportar reportes CAD';
+
+$string['selectcourses'] = 'Seleccionar cursos...';
+$string['selectgroups'] = 'Seleccionar grupos...';
+$string['selectusers'] = 'Seleccionar usuarios...';
+$string['export'] = 'Exportar';
+$string['filter'] = 'Filtrar';
+$string['error:dateorder'] = 'La fecha inicial debe ser anterior a la fecha final';
