@@ -1,11 +1,15 @@
 <?php
 require_once('../../../config.php');
+
+global $CFG,$DB,$PAGE,$OUTPUT,$USER;
+
 require_once($CFG->libdir.'/adminlib.php');
 require_once($CFG->libdir.'/csvlib.class.php');
 require_once($CFG->libdir.'/excellib.class.php');
 require_once($CFG->libdir.'/tablelib.php');
 
-admin_externalpage_setup('local_cadreports');
+require_login();
+admin_externalpage_setup('cadreports_access');
 
 $PAGE->set_url('/local/cadreports/reports/access_report.php');
 $PAGE->set_title('Reporte de Accesos y Sesiones');
