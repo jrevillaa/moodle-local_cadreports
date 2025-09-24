@@ -107,3 +107,45 @@ $string['errorloadinggroups'] = 'Error cargando grupos';
 
 // Strings específicos del reporte de notas
 $string['activityidnumber'] = 'ID de Actividad'; // ✅ NUEVO
+
+$string['quizreport'] = 'Resumen de Cuestionarios';
+$string['quizreportinfo'] = 'Este reporte muestra información detallada sobre los intentos de cuestionarios de los estudiantes.';
+$string['quizname'] = 'Nombre del Cuestionario';
+$string['quizidnumber'] = 'ID del Cuestionario';
+$string['attemptsmade'] = 'Intentos Realizados';
+$string['attemptsallowed'] = 'Intentos Permitidos';
+$string['bestgrade'] = 'Mejor Nota';
+$string['latestattempt'] = 'Último Intento';
+
+// ... código existente ...
+
+// Strings específicos del reporte de actividad de usuarios
+$string['activityreport'] = 'Actividad de Usuarios';
+$string['activityreportinfo'] = 'Este reporte muestra todas las acciones realizadas por los usuarios en los cursos seleccionados.';
+$string['action'] = 'Acción';
+$string['component'] = 'Componente';
+$string['target'] = 'Objetivo';
+$string['targetname'] = 'Nombre del Objetivo';
+$string['eventdescription'] = 'Descripción';
+$string['datetime'] = 'Fecha y Hora';
+
+// Strings para filtros
+$string['allactions'] = 'Todas las acciones';
+$string['actionviewed'] = 'Visto';
+$string['actioncreated'] = 'Creado';
+$string['actionupdated'] = 'Actualizado';
+$string['actionsubmitted'] = 'Enviado';
+$string['actiondeleted'] = 'Eliminado';
+$string['actionloggedin'] = 'Inició Sesión';
+$string['actionloggedout'] = 'Cerró Sesión';
+$string['actionfilter'] = 'Filtrar por Acción';
+
+$string['allcomponents'] = 'Todos los componentes';
+$string['componentcore'] = 'Sistema';
+$string['componentquiz'] = 'Cuestionario';
+$string['componentforum'] = 'Foro';
+$string['componentassign'] = 'Tarea';
+$string['componentscorm'] = 'SCORM';
+$string['componentlesson'] = 'Lección';
+$string['componentfilter'] = 'Filtrar por Componente';
+

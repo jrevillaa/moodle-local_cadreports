@@ -48,43 +48,48 @@ class quiz_table extends table_base {
     protected function build_specific_sql() {
         global $DB;
 
-        // SQL específico para cuestionarios con información detallada
+        $params = [];
+
+        // ✅ CORREGIDO: SQL con course_modules para obtener idnumber
         $fields = "CONCAT(u.id, '_', c.id, '_', COALESCE(gr.id, 0), '_', q.id) as uniqueid,
-                   u.id as userid, 
-                   c.id as courseid,
-                   c.fullname as coursefullname,
-                   c.shortname as courseshortname,
-                   COALESCE(gr.name, '') as groupname,
-                   u.firstname,
-                   u.lastname, 
-                   u.username,
-                   u.email,
-                   q.name as quizname,
-                   q.idnumber as quizidnumber,
-                   COALESCE(attempts_count.attempts_made, 0) as attempts_made,
-                   q.attempts as attempts_allowed,
-                   COALESCE(best_attempt.best_grade, 0) as best_grade,
-                   COALESCE(latest_attempt.timemodified, 0) as latest_attempt";
+               u.id as userid, 
+               c.id as courseid,
+               c.fullname as coursefullname,
+               c.shortname as courseshortname,
+               COALESCE(gr.name, '') as groupname,
+               u.firstname,
+               u.lastname, 
+               u.username,
+               u.email,
+               q.name as quizname,
+               COALESCE(cm.idnumber, '') as quizidnumber,
+               COALESCE(attempts_count.attempts_made, 0) as attempts_made,
+               q.attempts as attempts_allowed,
+               COALESCE(best_attempt.best_grade, 0) as best_grade,
+               COALESCE(latest_attempt.timemodified, 0) as latest_attempt";
 
-        // FROM con JOINs para obtener información de cuestionarios
+        // ✅ CORREGIDO: FROM con course_modules JOIN para idnumber
         $from = "{course} c
-                 JOIN {enrol} e ON e.courseid = c.id
-                 JOIN {user_enrolments} ue ON ue.enrolid = e.id  
-                 JOIN {user} u ON u.id = ue.userid
-                 LEFT JOIN {groups_members} gm ON gm.userid = u.id AND gm.groupid IN (
-                     SELECT id FROM {groups} WHERE courseid = c.id
-                 )
-                 LEFT JOIN {groups} gr ON gr.id = gm.groupid
-                 JOIN {quiz} q ON q.course = c.id
-                 LEFT JOIN (
-                     SELECT 
-                         userid, 
-                         quiz,
-                         COUNT(*) as attempts_made
-                     FROM {quiz_attempts}
-                     WHERE state IN ('finished', 'abandoned')";
+             JOIN {enrol} e ON e.courseid = c.id
+             JOIN {user_enrolments} ue ON ue.enrolid = e.id  
+             JOIN {user} u ON u.id = ue.userid
+             LEFT JOIN {groups_members} gm ON gm.userid = u.id AND gm.groupid IN (
+                 SELECT id FROM {groups} WHERE courseid = c.id
+             )
+             LEFT JOIN {groups} gr ON gr.id = gm.groupid
+             JOIN {quiz} q ON q.course = c.id
+             LEFT JOIN {course_modules} cm ON cm.course = c.id 
+                       AND cm.module = (SELECT id FROM {modules} WHERE name = 'quiz') 
+                       AND cm.instance = q.id
+             LEFT JOIN (
+                 SELECT 
+                     userid, 
+                     quiz,
+                     COUNT(*) as attempts_made
+                 FROM {quiz_attempts}
+                 WHERE state IN ('finished', 'abandoned')";
 
-        // Aplicar filtro de fechas para intentos si está presente
+        // Aplicar filtros de fecha para intentos
         if (!empty($this->filters['datefrom'])) {
             $from .= " AND timemodified >= :attempts_datefrom";
             $params['attempts_datefrom'] = $this->filters['datefrom'];
@@ -96,16 +101,16 @@ class quiz_table extends table_base {
         }
 
         $from .= "     GROUP BY userid, quiz
-                 ) attempts_count ON attempts_count.userid = u.id AND attempts_count.quiz = q.id
-                 LEFT JOIN (
-                     SELECT 
-                         userid,
-                         quiz,
-                         MAX(sumgrades) as best_grade
-                     FROM {quiz_attempts}
-                     WHERE state = 'finished'";
+             ) attempts_count ON attempts_count.userid = u.id AND attempts_count.quiz = q.id
+             LEFT JOIN (
+                 SELECT 
+                     userid,
+                     quiz,
+                     MAX(sumgrades) as best_grade
+                 FROM {quiz_attempts}
+                 WHERE state = 'finished'";
 
-        // Aplicar filtro de fechas para mejor nota
+        // Aplicar filtros de fecha para mejor nota
         if (!empty($this->filters['datefrom'])) {
             $from .= " AND timemodified >= :best_grade_datefrom";
             $params['best_grade_datefrom'] = $this->filters['datefrom'];
@@ -117,16 +122,16 @@ class quiz_table extends table_base {
         }
 
         $from .= "     GROUP BY userid, quiz
-                 ) best_attempt ON best_attempt.userid = u.id AND best_attempt.quiz = q.id
-                 LEFT JOIN (
-                     SELECT 
-                         userid,
-                         quiz,
-                         MAX(timemodified) as timemodified
-                     FROM {quiz_attempts}
-                     WHERE state IN ('finished', 'abandoned')";
+             ) best_attempt ON best_attempt.userid = u.id AND best_attempt.quiz = q.id
+             LEFT JOIN (
+                 SELECT 
+                     userid,
+                     quiz,
+                     MAX(timemodified) as timemodified
+                 FROM {quiz_attempts}
+                 WHERE state IN ('finished', 'abandoned')";
 
-        // Aplicar filtro de fechas para último intento
+        // Aplicar filtros de fecha para último intento
         if (!empty($this->filters['datefrom'])) {
             $from .= " AND timemodified >= :latest_attempt_datefrom";
             $params['latest_attempt_datefrom'] = $this->filters['datefrom'];
@@ -138,18 +143,18 @@ class quiz_table extends table_base {
         }
 
         $from .= "     GROUP BY userid, quiz
-                 ) latest_attempt ON latest_attempt.userid = u.id AND latest_attempt.quiz = q.id";
+             ) latest_attempt ON latest_attempt.userid = u.id AND latest_attempt.quiz = q.id";
 
         // WHERE base
         $where = "u.deleted = 0 AND u.suspended = 0 AND ue.status = 0";
-
-        $params = [];
 
         // Aplicar filtros comunes
         $this->apply_common_filters($where, $params);
 
         $this->set_sql($fields, $from, $where, $params);
     }
+
+
 
     /**
      * Procesar columnas específicas del reporte de cuestionarios
@@ -188,8 +193,9 @@ class quiz_table extends table_base {
                 return '-';
 
             case 'latest_attempt':
-                if (!empty($row->latest_attempt) && $row->latest_attempt > 0) {
-                    return userdate($row->latest_attempt, get_string('strftimedatetimeshort', 'core_langconfig'));
+                // ✅ CORREGIDO: Validar que sea timestamp numérico válido
+                if (!empty($row->latest_attempt) && is_numeric($row->latest_attempt) && $row->latest_attempt > 0) {
+                    return userdate((int)$row->latest_attempt, get_string('strftimedatetimeshort', 'core_langconfig'));
                 }
                 return get_string('never', 'core');
 
@@ -202,7 +208,9 @@ class quiz_table extends table_base {
      * Formatear fila específica para exportación
      */
     protected function format_export_row($row) {
-        // Formatear campos para exportación
+        global $DB;
+
+        // Formatear campos básicos
         $row->quizname = !empty($row->quizname) ? $row->quizname : '-';
         $row->quizidnumber = !empty($row->quizidnumber) ? $row->quizidnumber : '-';
         $row->attempts_made = (int)$row->attempts_made;
@@ -219,10 +227,19 @@ class quiz_table extends table_base {
             $row->best_grade = '-';
         }
 
-        if (!empty($row->latest_attempt) && $row->latest_attempt > 0) {
-            $row->latest_attempt = userdate($row->latest_attempt, '%d/%m/%Y %H:%M');
+        // ✅ ALTERNATIVA: Obtener timestamp original si latest_attempt ya fue procesado
+        if (is_string($row->latest_attempt) && $row->latest_attempt !== 'Nunca' && $row->latest_attempt !== get_string('never', 'core')) {
+            // Ya está formateado, dejarlo como está
+            // No hacer nada
         } else {
-            $row->latest_attempt = 'Nunca';
+            // Si por alguna razón llegó aquí sin procesar, procesarlo
+            if (!empty($row->latest_attempt) && is_numeric($row->latest_attempt) && $row->latest_attempt > 0) {
+                $row->latest_attempt = userdate((int)$row->latest_attempt, '%d/%m/%Y %H:%M');
+            } else {
+                $row->latest_attempt = 'Nunca';
+            }
         }
     }
+
+
 }
