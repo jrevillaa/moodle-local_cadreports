@@ -1,7 +1,7 @@
 <?php
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'CAD Reports';
+$string['pluginname'] = 'CAD Reportes';
 $string['cadreports:view'] = 'Ver reportes CAD';
 $string['cadreports:export'] = 'Exportar reportes CAD';
 
@@ -42,3 +42,23 @@ $string['header_response_date'] = 'Fecha de respuesta';
 $string['status_pending'] = 'Pendiente';
 $string['status_answered'] = 'Respondido';
 $string['status_no_response'] = 'Sin respuesta';
+
+
+$string['settings'] = 'Configuración';
+$string['accessreport'] = 'Accesos y Sesiones';
+$string['gradesreport'] = 'Registro de Notas';
+$string['quizreport'] = 'Resumen de Cuestionarios';
+$string['activityreport'] = 'Actividad de Usuarios';
+$string['forumreport'] = 'Participación en Foros';
+$string['cadreports:view'] = 'Ver reportes CAD';
+$string['cadreports:export'] = 'Exportar reportes CAD';
+
+$string['selectcourses'] = 'Seleccionar cursos...';
+$string['selectgroups'] = 'Seleccionar grupos...';
+$string['selectusers'] = 'Seleccionar usuarios...';
+$string['export'] = 'Exportar';
+$string['filter'] = 'Filtrar';
+$string['error:dateorder'] = 'La fecha inicial debe ser anterior a la fecha final';
+
+$string['datefrom'] = 'Desde';
+$string['dateto'] = 'Hasta';
