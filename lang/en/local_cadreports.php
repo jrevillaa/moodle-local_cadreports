@@ -91,8 +91,8 @@ $string['modifiedonly_help'] = 'Mostrar únicamente las calificaciones que han s
 // Strings para multiselección
 $string['courses'] = 'Cursos';
 $string['groups'] = 'Grupos';
-$string['selectcourses'] = 'Seleccionar cursos...';
-$string['selectgroups'] = 'Seleccionar grupos...';
+$string['selectcourses'] = 'Buscar y seleccionar cursos...';
+$string['selectgroups'] = 'Buscar y seleccionar grupos...';
 $string['allactivitiesinfo'] = 'Este reporte muestra TODAS las actividades y la nota final del curso para los cursos seleccionados.';
 
 // Strings para multiselect

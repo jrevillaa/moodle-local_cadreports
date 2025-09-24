@@ -15,10 +15,11 @@ $functions = [
         'ajax'        => true,
         'capabilities' => 'local/cadreports:view',
     ],
-    'local_cadreports_get_groups_for_courses' => [
-        'classname'   => 'local_cadreports\external\get_groups_for_courses',
+    // ✅ NUEVO: Servicio para autocomplete dinámico de grupos
+    'local_cadreports_get_groups_by_courses' => [
+        'classname'   => 'local_cadreports\external\get_groups_by_courses',
         'methodname'  => 'execute',
-        'description' => 'Get groups for multiple courses',
+        'description' => 'Get groups by courses for autocomplete',
         'type'        => 'read',
         'ajax'        => true,
         'capabilities' => 'local/cadreports:view',

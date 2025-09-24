@@ -1,6 +1,6 @@
 <?php
 /**
- * Clase base para formularios con multiselect simple
+ * Clase base para formularios con autocomplete dinámico
  * Plugin local_cadreports para Moodle 4.4
  */
 
@@ -11,7 +11,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir.'/formslib.php');
 
 /**
- * Clase base para formularios de filtros
+ * Clase base para formularios de filtros con autocomplete dinámico
  */
 abstract class form_base extends \moodleform {
 
@@ -33,30 +33,51 @@ abstract class form_base extends \moodleform {
         // Botones de acción
         $this->add_action_buttons(false, get_string('generatereport', 'local_cadreports'));
 
-        // JavaScript para funcionalidad
+        // ✅ AGREGADO: JavaScript para autocomplete dinámico
         $this->add_javascript();
     }
 
     /**
-     * Añadir elementos base comunes - USANDO SELECT MÚLTIPLE SIMPLE
+     * Añadir elementos base comunes con autocomplete dinámico
      */
     protected function add_base_elements($mform) {
-        // ✅ CAMBIO: Select múltiple simple para cursos
-        $courses = $this->get_courses();
-        $select_courses = $mform->addElement('select', 'courseids',
+        // ✅ AUTOCOMPLETE: Cursos (este se mantiene igual)
+        $course_options = [
+            'multiple' => true,
+            'noselectionstring' => get_string('selectcourses', 'local_cadreports'),
+            'placeholder' => get_string('selectcourses', 'local_cadreports'),
+        ];
+
+        $courses = $this->get_all_courses_for_autocomplete();
+
+        $mform->addElement('autocomplete', 'courseids',
             get_string('courses', 'local_cadreports'),
-            $courses);
-        $select_courses->setMultiple(true);
-        $select_courses->setSize(min(8, count($courses))); // Mostrar hasta 8 opciones
+            $courses,
+            $course_options);
         $mform->setType('courseids', PARAM_INT);
 
-        // ✅ CAMBIO: Select múltiple simple para grupos (se actualiza via AJAX)
-        $groups = ['' => get_string('selectcoursefirst', 'local_cadreports')];
-        $select_groups = $mform->addElement('select', 'groupids',
+        // ✅ AUTOCOMPLETE DINÁMICO: Grupos que se actualiza con AJAX
+        $group_options = [
+            'multiple' => true,
+            'noselectionstring' => get_string('selectcoursefirst', 'local_cadreports'),
+            'placeholder' => get_string('selectcoursefirst', 'local_cadreports'),
+            'ajax' => 'local_cadreports/get_groups_by_courses', // ✅ AJAX endpoint
+            'valuehtmlcallback' => function($value) {
+                global $DB;
+                if (empty($value)) return '';
+                if ($group = $DB->get_record('groups', ['id' => $value], 'id,name,courseid')) {
+                    $course = $DB->get_record('course', ['id' => $group->courseid], 'shortname');
+                    return $group->name . ' (' . $course->shortname . ')';
+                }
+                return $value;
+            }
+        ];
+
+        // ✅ IMPORTANTE: Iniciar vacío, se llena dinámicamente
+        $mform->addElement('autocomplete', 'groupids',
             get_string('groups', 'local_cadreports'),
-            $groups);
-        $select_groups->setMultiple(true);
-        $select_groups->setSize(6);
+            [], // Vacío inicialmente
+            $group_options);
         $mform->setType('groupids', PARAM_INT);
 
         // Fecha desde
@@ -71,9 +92,9 @@ abstract class form_base extends \moodleform {
     }
 
     /**
-     * Obtener lista de cursos para select
+     * Obtener todos los cursos para autocomplete (sin cambios)
      */
-    protected function get_courses() {
+    protected function get_all_courses_for_autocomplete() {
         global $DB;
 
         $courses = [];
@@ -83,7 +104,8 @@ abstract class form_base extends \moodleform {
                 JOIN {enrol} e ON e.courseid = c.id
                 JOIN {user_enrolments} ue ON ue.enrolid = e.id
                 WHERE c.id > :siteid AND c.visible = :visible
-                ORDER BY c.fullname";
+                ORDER BY c.fullname
+                LIMIT 1000";
 
         $params = [
             'siteid' => SITEID,
@@ -100,28 +122,24 @@ abstract class form_base extends \moodleform {
     }
 
     /**
-     * JavaScript para cargar grupos cuando se seleccionan cursos
+     * ✅ NUEVO: JavaScript para manejar autocomplete dinámico
      */
     protected function add_javascript() {
         global $PAGE;
 
-        $PAGE->requires->js_call_amd('local_cadreports/form_multiselect', 'init');
+        $PAGE->requires->js_call_amd('local_cadreports/dynamic_groups', 'init');
     }
 
-    /**
-     * Validación base común
-     */
+    // Resto de métodos sin cambios...
     public function validation($data, $files) {
         $errors = parent::validation($data, $files);
 
-        // Validar rango de fechas
         if (!empty($data['datefrom']) && !empty($data['dateto'])) {
             if ($data['datefrom'] >= $data['dateto']) {
                 $errors['dateto'] = get_string('error_daterange', 'local_cadreports');
             }
         }
 
-        // Validaciones específicas
         $specific_errors = $this->specific_validation($data, $files);
         return array_merge($errors, $specific_errors);
     }

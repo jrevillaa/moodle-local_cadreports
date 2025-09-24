@@ -37,11 +37,17 @@ abstract class table_base extends \table_sql {
     protected function setup_base_config() {
         global $PAGE;
 
-        //  CORREGIDO: Configurar baseurl para evitar warning
+        // ✅ CORREGIDO: Configurar baseurl manejando arrays correctamente
         $baseurl = new \moodle_url($PAGE->url);
         foreach ($this->filters as $key => $value) {
             if (!empty($value) && $key !== 'download') {
-                $baseurl->param($key, $value);
+                // ✅ NUEVO: Manejar arrays convirtiéndolos a string
+                if (is_array($value)) {
+                    // Convertir array a string separado por comas para URL
+                    $baseurl->param($key, implode(',', $value));
+                } else {
+                    $baseurl->param($key, $value);
+                }
             }
         }
         $this->define_baseurl($baseurl);
@@ -50,8 +56,6 @@ abstract class table_base extends \table_sql {
         $this->sortable(true);
         $this->pageable(true);
         $this->is_collapsible = false;
-
-        //  AGREGADO: Habilitar filtro por iniciales (A-Z)
         $this->initialbars(true);
 
         // CSS classes comunes
@@ -60,7 +64,9 @@ abstract class table_base extends \table_sql {
         // Configurar exportación usando core de Moodle
         $this->is_downloadable(true);
         $this->show_download_buttons_at([TABLE_P_BOTTOM]);
+        $this->download_buttons = ['csv', 'ods', 'xls'];
     }
+
 
     /**
      * Obtener columnas base comunes (orden, curso, grupo, usuario)
@@ -110,26 +116,52 @@ abstract class table_base extends \table_sql {
     }
 
     /**
-     * Aplicar filtros comunes (curso, grupo, fechas)
+     * Aplicar filtros comunes (múltiples cursos, múltiples grupos, fechas)
      */
     protected function apply_common_filters(&$where, &$params) {
-        // Filtro por curso
-        if (!empty($this->filters['courseid'])) {
-            $where .= " AND c.id = :courseid";
-            $params['courseid'] = $this->filters['courseid'];
+        global $DB; // ✅ AGREGADO: faltaba esta línea
+
+        // Filtro por múltiples cursos
+        if (!empty($this->filters['courseids'])) {
+            $courseids = is_array($this->filters['courseids']) ?
+                $this->filters['courseids'] :
+                [$this->filters['courseids']];
+
+            // Filtrar solo IDs válidos
+            $courseids = array_filter($courseids, function($id) {
+                return !empty($id) && is_numeric($id);
+            });
+
+            if (count($courseids) > 0) {
+                list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'course');
+                $where .= " AND c.id $insql";
+                $params = array_merge($params, $inparams);
+            }
         }
 
-        // Filtro por grupo
-        if (!empty($this->filters['groupid'])) {
-            $where .= " AND g.id = :groupid";
-            $params['groupid'] = $this->filters['groupid'];
+        // Filtro por múltiples grupos
+        if (!empty($this->filters['groupids'])) {
+            $groupids = is_array($this->filters['groupids']) ?
+                $this->filters['groupids'] :
+                [$this->filters['groupids']];
+
+            // Filtrar solo IDs válidos
+            $groupids = array_filter($groupids, function($id) {
+                return !empty($id) && is_numeric($id);
+            });
+
+            if (count($groupids) > 0) {
+                list($insql, $inparams) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'group');
+                $where .= " AND g.id $insql";
+                $params = array_merge($params, $inparams);
+            }
         }
 
         // Solo usuarios con actividad en el rango de fechas (si se especifica)
         if (!empty($this->filters['datefrom']) || !empty($this->filters['dateto'])) {
             $where .= " AND EXISTS (
-                SELECT 1 FROM {logstore_standard_log} l 
-                WHERE l.userid = u.id AND l.courseid = c.id";
+            SELECT 1 FROM {logstore_standard_log} l 
+            WHERE l.userid = u.id AND l.courseid = c.id";
 
             if (!empty($this->filters['datefrom'])) {
                 $where .= " AND l.timecreated >= :datefrom";
@@ -144,6 +176,8 @@ abstract class table_base extends \table_sql {
             $where .= ")";
         }
     }
+
+
 
     /**
      * Procesamiento común de columnas base
