@@ -80,6 +80,7 @@ $string['activityname'] = 'Nombre de Actividad';
 $string['activitytype'] = 'Tipo de Actividad';
 $string['allactivities'] = 'Todas las actividades';
 $string['maxgrade'] = 'Nota Máxima';
+$string['gradefinal'] = 'Nota';
 $string['percentage'] = 'Porcentaje';
 $string['timemodified'] = 'Fecha/Hora Modificación';
 $string['modifiedby'] = 'Modificado por';
@@ -100,3 +101,7 @@ $string['allactivitiesinfo'] = 'Este reporte muestra TODAS las actividades y la 
 $string['selectcoursefirst'] = 'Selecciona primero uno o más cursos';
 $string['nogroups'] = 'No hay grupos para los cursos seleccionados';
 $string['errorloadinggroups'] = 'Error cargando grupos';
+
+
+// Strings específicos del reporte de notas
+$string['activityidnumber'] = 'ID de Actividad'; // ✅ NUEVO
