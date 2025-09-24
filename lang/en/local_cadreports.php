@@ -149,3 +149,17 @@ $string['componentscorm'] = 'SCORM';
 $string['componentlesson'] = 'Lección';
 $string['componentfilter'] = 'Filtrar por Componente';
 
+$string['forumreport'] = 'Participación en Foros';
+$string['forumreportinfo'] = 'Este reporte muestra la participación de estudiantes en foros y las respuestas del personal docente/administrativo.';
+$string['forumname'] = 'Nombre del Foro';
+$string['forumidnumber'] = 'ID del Foro';
+$string['participationdate'] = 'Fecha de Participación';
+$string['staffresponsestatus'] = 'Estado de Respuesta';
+$string['staffresponsedate'] = 'Fecha de Respuesta';
+
+// Strings para filtros de participación
+$string['allparticipation'] = 'Toda la participación';
+$string['participated'] = 'Con participación';
+$string['notparticipated'] = 'Sin participación';
+$string['respondedbycstaff'] = 'Respondido por staff';
+$string['participationstatus'] = 'Estado de Participación';
