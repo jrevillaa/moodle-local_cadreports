@@ -36,28 +36,24 @@ class time_calculator {
             'courseid' => $courseid
         ];
 
-        $timeconditions = [];
+        $timewhere = "";
         if ($datefrom > 0) {
-            $timeconditions[] = "timecreated >= :datefrom";
+            $timewhere .= " AND timecreated >= :datefrom";
             $params['datefrom'] = $datefrom;
         }
         if ($dateto > 0) {
-            $timeconditions[] = "timecreated <= :dateto";
+            $timewhere .= " AND timecreated <= :dateto";
             $params['dateto'] = $dateto;
         }
 
-        $timewhere = !empty($timeconditions) ? ' AND ' . implode(' AND ', $timeconditions) : '';
+        $actions = "'" . implode("','", self::VALID_ACTIONS) . "'";
 
-        // Usar list() para IN clause de forma segura
-        list($insql, $inparams) = $DB->get_in_or_equal(self::VALID_ACTIONS, SQL_PARAMS_NAMED);
-        $params = array_merge($params, $inparams);
-
-        // Obtener eventos ordenados por tiempo usando DML API optimizada
+        // Obtener eventos ordenados por tiempo
         $sql = "SELECT timecreated
                 FROM {logstore_standard_log} 
                 WHERE userid = :userid 
                 AND courseid = :courseid 
-                AND action $insql
+                AND action IN ($actions)
                 $timewhere
                 ORDER BY timecreated ASC";
 
@@ -114,7 +110,7 @@ class time_calculator {
     }
 
     /**
-     * Formatear tiempo en formato legible usando userdate cuando sea apropiado
+     * Formatear tiempo en formato legible (días, horas, minutos, segundos)
      *
      * @param int $seconds Tiempo en segundos
      * @param bool $detailed Si usar formato detallado para exportación
@@ -122,33 +118,29 @@ class time_calculator {
      */
     public static function format_duration($seconds, $detailed = false) {
         if ($seconds <= 0) {
-            return get_string('none');
+            return '0s';
         }
 
-        $days = intval($seconds / DAYSECS);
-        $seconds = $seconds % DAYSECS;
+        $days = intval($seconds / 86400);
+        $seconds = $seconds % 86400;
 
-        $hours = intval($seconds / HOURSECS);
-        $seconds = $seconds % HOURSECS;
+        $hours = intval($seconds / 3600);
+        $seconds = $seconds % 3600;
 
-        $minutes = intval($seconds / MINSECS);
-        $seconds = $seconds % MINSECS;
+        $minutes = intval($seconds / 60);
+        $seconds = $seconds % 60;
 
         if ($detailed) {
             // Formato detallado para exportación
-            return get_string('durationformat_detailed', 'local_cadreports', [
-                'days' => $days,
-                'hours' => $hours,
-                'minutes' => $minutes,
-                'seconds' => $seconds
-            ]);
+            return sprintf('%d días, %d horas, %d minutos, %d segundos',
+                $days, $hours, $minutes, $seconds);
         } else {
             // Formato compacto para visualización
             $parts = [];
-            if ($days > 0) $parts[] = $days . get_string('days', 'core', '');
-            if ($hours > 0) $parts[] = $hours . get_string('hours', 'core', '');
-            if ($minutes > 0) $parts[] = $minutes . get_string('mins', 'core', '');
-            if ($seconds > 0 || empty($parts)) $parts[] = $seconds . get_string('secs', 'core', '');
+            if ($days > 0) $parts[] = $days . 'd';
+            if ($hours > 0) $parts[] = $hours . 'h';
+            if ($minutes > 0) $parts[] = $minutes . 'm';
+            if ($seconds > 0 || empty($parts)) $parts[] = $seconds . 's';
 
             return implode(' ', $parts);
         }
