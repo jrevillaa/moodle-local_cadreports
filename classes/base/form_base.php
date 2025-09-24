@@ -1,6 +1,6 @@
 <?php
 /**
- * Clase base para formularios reutilizable
+ * Clase base para formularios con multiselect simple
  * Plugin local_cadreports para Moodle 4.4
  */
 
@@ -33,24 +33,31 @@ abstract class form_base extends \moodleform {
         // Botones de acción
         $this->add_action_buttons(false, get_string('generatereport', 'local_cadreports'));
 
-        // JavaScript adicional
+        // JavaScript para funcionalidad
         $this->add_javascript();
     }
 
     /**
-     * Añadir elementos base comunes (curso, grupo, fechas)
+     * Añadir elementos base comunes - USANDO SELECT MÚLTIPLE SIMPLE
      */
     protected function add_base_elements($mform) {
-        // Selector de curso
+        // ✅ CAMBIO: Select múltiple simple para cursos
         $courses = $this->get_courses();
-        $mform->addElement('select', 'courseid', get_string('course', 'local_cadreports'), $courses);
-        $mform->setType('courseid', PARAM_INT);
+        $select_courses = $mform->addElement('select', 'courseids',
+            get_string('courses', 'local_cadreports'),
+            $courses);
+        $select_courses->setMultiple(true);
+        $select_courses->setSize(min(8, count($courses))); // Mostrar hasta 8 opciones
+        $mform->setType('courseids', PARAM_INT);
 
-        // Selector de grupo (se actualiza via AJAX)
-        $groups = [0 => get_string('allgroups', 'local_cadreports')];
-        $mform->addElement('select', 'groupid', get_string('group', 'local_cadreports'), $groups);
-        $mform->setType('groupid', PARAM_INT);
-        $mform->disabledIf('groupid', 'courseid', 'eq', 0);
+        // ✅ CAMBIO: Select múltiple simple para grupos (se actualiza via AJAX)
+        $groups = ['' => get_string('selectcoursefirst', 'local_cadreports')];
+        $select_groups = $mform->addElement('select', 'groupids',
+            get_string('groups', 'local_cadreports'),
+            $groups);
+        $select_groups->setMultiple(true);
+        $select_groups->setSize(6);
+        $mform->setType('groupids', PARAM_INT);
 
         // Fecha desde
         $mform->addElement('date_time_selector', 'datefrom',
@@ -61,6 +68,44 @@ abstract class form_base extends \moodleform {
         $mform->addElement('date_time_selector', 'dateto',
             get_string('dateto', 'local_cadreports'),
             ['optional' => true]);
+    }
+
+    /**
+     * Obtener lista de cursos para select
+     */
+    protected function get_courses() {
+        global $DB;
+
+        $courses = [];
+
+        $sql = "SELECT DISTINCT c.id, c.fullname, c.shortname 
+                FROM {course} c
+                JOIN {enrol} e ON e.courseid = c.id
+                JOIN {user_enrolments} ue ON ue.enrolid = e.id
+                WHERE c.id > :siteid AND c.visible = :visible
+                ORDER BY c.fullname";
+
+        $params = [
+            'siteid' => SITEID,
+            'visible' => 1
+        ];
+
+        $courserecords = $DB->get_records_sql($sql, $params);
+
+        foreach ($courserecords as $course) {
+            $courses[$course->id] = format_string($course->fullname) . ' (' . $course->shortname . ')';
+        }
+
+        return $courses;
+    }
+
+    /**
+     * JavaScript para cargar grupos cuando se seleccionan cursos
+     */
+    protected function add_javascript() {
+        global $PAGE;
+
+        $PAGE->requires->js_call_amd('local_cadreports/form_multiselect', 'init');
     }
 
     /**
@@ -81,84 +126,7 @@ abstract class form_base extends \moodleform {
         return array_merge($errors, $specific_errors);
     }
 
-    /**
-     * Obtener lista de cursos disponibles
-     */
-    protected function get_courses() {
-        global $DB;
-
-        $courses = [0 => get_string('allcourses', 'local_cadreports')];
-
-        $sql = "SELECT DISTINCT c.id, c.fullname, c.shortname 
-                FROM {course} c
-                JOIN {enrol} e ON e.courseid = c.id
-                JOIN {user_enrolments} ue ON ue.enrolid = e.id
-                WHERE c.id > 1 AND c.visible = 1
-                ORDER BY c.fullname";
-
-        $courserecords = $DB->get_records_sql($sql);
-
-        foreach ($courserecords as $course) {
-            $courses[$course->id] = $course->fullname . ' (' . $course->shortname . ')';
-        }
-
-        return $courses;
-    }
-
-    /**
-     * JavaScript base para actualización de grupos
-     */
-    protected function add_javascript() {
-        global $PAGE;
-
-        $PAGE->requires->js_amd_inline('
-            require(["jquery"], function($) {
-                $("#id_courseid").change(function() {
-                    var courseid = $(this).val();
-                    var groupselect = $("#id_groupid");
-                    
-                    groupselect.empty().append(\'<option value="0">' .
-            get_string('allgroups', 'local_cadreports') . '</option>\');
-                    
-                    if (courseid > 0) {
-                        $.ajax({
-                            url: M.cfg.wwwroot + "/local/cadreports/ajax/get_groups.php",
-                            type: "GET",
-                             {courseid: courseid},
-                            dataType: "json",
-                            success: function(groups) {
-                                $.each(groups, function(id, name) {
-                                    if (id > 0) {
-                                        groupselect.append(\'<option value="\' + id + \'">\' + name + \'</option>\');
-                                    }
-                                });
-                                groupselect.prop("disabled", false);
-                            },
-                            error: function() {
-                                groupselect.prop("disabled", true);
-                            }
-                        });
-                    } else {
-                        groupselect.prop("disabled", true);
-                    }
-                });
-            });
-        ');
-    }
-
-    // MÉTODOS ABSTRACTOS - Implementar en formularios específicos
-
-    /**
-     * Añadir elementos específicos del formulario
-     * @param object $mform Objeto formulario
-     */
+    // MÉTODOS ABSTRACTOS
     abstract protected function add_specific_elements($mform);
-
-    /**
-     * Validación específica del formulario
-     * @param array $data Datos del formulario
-     * @param array $files Archivos (si los hay)
-     * @return array Errores específicos
-     */
     abstract protected function specific_validation($data, $files);
 }

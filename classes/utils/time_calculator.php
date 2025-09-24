@@ -52,19 +52,20 @@ class time_calculator {
         list($insql, $inparams) = $DB->get_in_or_equal(self::VALID_ACTIONS, SQL_PARAMS_NAMED);
         $params = array_merge($params, $inparams);
 
-        // Obtener eventos ordenados por tiempo usando DML API optimizada
-        $sql = "SELECT timecreated
-                FROM {logstore_standard_log} 
-                WHERE userid = :userid 
-                AND courseid = :courseid 
-                AND action $insql
-                $timewhere
-                ORDER BY timecreated ASC";
+        // ✅ CORREGIDO: Usar id único y eliminar duplicados
+        $sql = "SELECT id, timecreated
+            FROM {logstore_standard_log} 
+            WHERE userid = :userid 
+            AND courseid = :courseid 
+            AND action $insql
+            $timewhere
+            ORDER BY timecreated ASC";
 
         $events = $DB->get_records_sql($sql, $params);
 
         return self::process_events_to_time($events);
     }
+
 
     /**
      * Procesar array de eventos y calcular tiempo total
@@ -135,22 +136,19 @@ class time_calculator {
         $seconds = $seconds % MINSECS;
 
         if ($detailed) {
-            // Formato detallado para exportación
-            return get_string('durationformat_detailed', 'local_cadreports', [
-                'days' => $days,
-                'hours' => $hours,
-                'minutes' => $minutes,
-                'seconds' => $seconds
-            ]);
+            // ✅ CORREGIDO: Usar formato simple sin get_string problemático
+            return sprintf('%d días, %d horas, %d minutos, %d segundos',
+                $days, $hours, $minutes, $seconds);
         } else {
             // Formato compacto para visualización
             $parts = [];
-            if ($days > 0) $parts[] = $days . get_string('days', 'core', '');
-            if ($hours > 0) $parts[] = $hours . get_string('hours', 'core', '');
-            if ($minutes > 0) $parts[] = $minutes . get_string('mins', 'core', '');
-            if ($seconds > 0 || empty($parts)) $parts[] = $seconds . get_string('secs', 'core', '');
+            if ($days > 0) $parts[] = $days . 'd';
+            if ($hours > 0) $parts[] = $hours . 'h';
+            if ($minutes > 0) $parts[] = $minutes . 'm';
+            if ($seconds > 0 || empty($parts)) $parts[] = $seconds . 's';
 
             return implode(' ', $parts);
         }
     }
+
 }

@@ -15,4 +15,12 @@ $functions = [
         'ajax'        => true,
         'capabilities' => 'local/cadreports:view',
     ],
+    'local_cadreports_get_groups_for_courses' => [
+        'classname'   => 'local_cadreports\external\get_groups_for_courses',
+        'methodname'  => 'execute',
+        'description' => 'Get groups for multiple courses',
+        'type'        => 'read',
+        'ajax'        => true,
+        'capabilities' => 'local/cadreports:view',
+    ],
 ];

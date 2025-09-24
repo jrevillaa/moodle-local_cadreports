@@ -35,11 +35,24 @@ abstract class table_base extends \table_sql {
      * Configuración base común para todas las tablas
      */
     protected function setup_base_config() {
+        global $PAGE;
+
+        //  CORREGIDO: Configurar baseurl para evitar warning
+        $baseurl = new \moodle_url($PAGE->url);
+        foreach ($this->filters as $key => $value) {
+            if (!empty($value) && $key !== 'download') {
+                $baseurl->param($key, $value);
+            }
+        }
+        $this->define_baseurl($baseurl);
+
         // Configuración estándar de tabla
         $this->sortable(true);
         $this->pageable(true);
         $this->is_collapsible = false;
-        $this->initialbars(false);
+
+        //  AGREGADO: Habilitar filtro por iniciales (A-Z)
+        $this->initialbars(true);
 
         // CSS classes comunes
         $this->set_attribute('class', 'generaltable cadreports-table table-striped table-hover');
@@ -69,7 +82,9 @@ abstract class table_base extends \table_sql {
      * Construir base SQL común para obtener usuarios, cursos y grupos
      */
     protected function build_base_sql() {
-        $fields = "DISTINCT u.id as userid, 
+        // CORREGIDO: Usar ID único como primera columna y eliminar timecreated duplicado
+        $fields = "CONCAT(u.id, '_', c.id, '_', COALESCE(g.id, 0)) as uniqueid,
+                   u.id as userid, 
                    c.id as courseid,
                    c.fullname as coursefullname,
                    c.shortname as courseshortname,
@@ -153,7 +168,7 @@ abstract class table_base extends \table_sql {
                 return $row->coursefullname;
 
             case 'email':
-                // Solo mostrar email si el usuario tiene permisos
+                // Solo mostrar email si el usuario tiene permisos - contexto directo
                 if (has_capability('moodle/course:viewhiddenuserfields', \context_system::instance())) {
                     return $row->email;
                 }
@@ -163,7 +178,6 @@ abstract class table_base extends \table_sql {
                 return isset($row->$colname) ? $row->$colname : '';
         }
     }
-
 
     /**
      * Formatear filas para exportación

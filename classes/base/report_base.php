@@ -73,18 +73,72 @@ abstract class report_base {
      * Procesar filtros desde formulario o URL
      */
     protected function process_filters() {
-        // Obtener parámetros básicos comunes usando Moodle API
-        $this->filters = [
-            'courseid' => optional_param('courseid', 0, PARAM_INT),
-            'groupid' => optional_param('groupid', 0, PARAM_INT),
-            'datefrom' => optional_param('datefrom', 0, PARAM_INT),
-            'dateto' => optional_param('dateto', 0, PARAM_INT),
-            'download' => optional_param('download', '', PARAM_ALPHA)
-        ];
+        // Función helper para procesar arrays de IDs
+        $process_array_param = function($name, $form_data) {
+            // Primero intentar desde formulario
+            if ($form_data && isset($form_data->$name) && is_array($form_data->$name)) {
+                return $form_data->$name;
+            }
+
+            // Luego desde URL (puede venir como string separado por comas)
+            $url_value = optional_param($name, '', PARAM_RAW);
+            if (!empty($url_value)) {
+                if (is_array($url_value)) {
+                    return array_map('intval', $url_value);
+                } else {
+                    // Convertir string separado por comas a array
+                    return array_map('intval', explode(',', $url_value));
+                }
+            }
+
+            return [];
+        };
+
+        // Obtener datos del formulario
+        $form_data = $this->get_form()->get_data();
+
+        if ($form_data) {
+            // Usar datos del formulario (ya procesados y validados)
+            $this->filters = [
+                'courseids' => isset($form_data->courseids) ? $form_data->courseids : [],  // ✅ ARRAY
+                'groupids' => isset($form_data->groupids) ? $form_data->groupids : [],    // ✅ ARRAY
+                'datefrom' => isset($form_data->datefrom) ? $form_data->datefrom : 0,
+                'dateto' => isset($form_data->dateto) ? $form_data->dateto : 0,
+                'download' => optional_param('download', '', PARAM_ALPHA)
+            ];
+        } else {
+            // Fallback a parámetros URL
+            $this->filters = [
+                'courseids' => $process_array_param('courseids', null),  // ✅ ARRAY
+                'groupids' => $process_array_param('groupids', null),    // ✅ ARRAY
+                'datefrom' => optional_param('datefrom', 0, PARAM_INT),
+                'dateto' => optional_param('dateto', 0, PARAM_INT),
+                'download' => optional_param('download', '', PARAM_ALPHA)
+            ];
+        }
 
         // Permitir filtros adicionales específicos del reporte
-        $this->filters = array_merge($this->filters, $this->get_additional_filters());
+        $additional_filters = $this->get_additional_filters();
+        if (!empty($additional_filters)) {
+            $this->filters = array_merge($this->filters, $additional_filters);
+        }
     }
+
+    /**
+     * Verificar si hay filtros aplicados
+     */
+    protected function has_filters_applied() {
+        $form_data = $this->get_form()->get_data();
+
+        if ($form_data) {
+            return !empty($form_data->courseids) || !empty($form_data->datefrom) || !empty($form_data->dateto);
+        }
+
+        return !empty($this->filters['courseids']) || !empty($this->filters['datefrom']) || !empty($this->filters['dateto']);
+    }
+
+
+
 
     /**
      * Renderizar el reporte completo
@@ -147,13 +201,6 @@ abstract class report_base {
         die();
     }
 
-    /**
-     * Verificar si hay filtros aplicados
-     */
-    protected function has_filters_applied() {
-        $form_data = $this->get_form()->get_data();
-        return $form_data || array_sum(array_filter($this->filters, 'is_numeric')) > 0;
-    }
 
     /**
      * Obtener nombre del archivo de descarga
