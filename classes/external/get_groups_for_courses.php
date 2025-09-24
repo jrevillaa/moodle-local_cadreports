@@ -77,7 +77,7 @@ class get_groups_for_courses extends external_api {
     }
 
     /**
-     * Estructura de retorno
+     * Estructura de retorno - ✅ CORREGIDA
      */
     public static function execute_returns() {
         return new external_multiple_structure(

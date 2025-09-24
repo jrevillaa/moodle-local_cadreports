@@ -10,7 +10,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 /** @var TYPE_NAME $plugin */
-$plugin->version   = 2024092440;        // The current plugin version (Date: YYYYMMDDXX)
+$plugin->version   = 2024092450;        // The current plugin version (Date: YYYYMMDDXX)
 $plugin->requires  = 2024042200;        // Moodle 4.4 minimum version required
 /** @var TYPE_NAME $plugin */
 $plugin->component = 'local_cadreports'; // Full name of the plugin (used for diagnostics)

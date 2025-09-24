@@ -38,10 +38,10 @@ abstract class form_base extends \moodleform {
     }
 
     /**
-     * Añadir elementos base comunes con autocomplete dinámico
+     * Añadir elementos base comunes con autocomplete dinámico CORREGIDO
      */
     protected function add_base_elements($mform) {
-        // ✅ AUTOCOMPLETE: Cursos (este se mantiene igual)
+        // Autocomplete de cursos (sin cambios)
         $course_options = [
             'multiple' => true,
             'noselectionstring' => get_string('selectcourses', 'local_cadreports'),
@@ -56,40 +56,31 @@ abstract class form_base extends \moodleform {
             $course_options);
         $mform->setType('courseids', PARAM_INT);
 
-        // ✅ AUTOCOMPLETE DINÁMICO: Grupos que se actualiza con AJAX
+        // ✅ CORREGIDO: Autocomplete SIN ajax, se actualiza con JavaScript
         $group_options = [
             'multiple' => true,
             'noselectionstring' => get_string('selectcoursefirst', 'local_cadreports'),
             'placeholder' => get_string('selectcoursefirst', 'local_cadreports'),
-            'ajax' => 'local_cadreports/get_groups_by_courses', // ✅ AJAX endpoint
-            'valuehtmlcallback' => function($value) {
-                global $DB;
-                if (empty($value)) return '';
-                if ($group = $DB->get_record('groups', ['id' => $value], 'id,name,courseid')) {
-                    $course = $DB->get_record('course', ['id' => $group->courseid], 'shortname');
-                    return $group->name . ' (' . $course->shortname . ')';
-                }
-                return $value;
-            }
+            // ❌ ELIMINADO: 'ajax' => 'local_cadreports/get_groups_by_courses'
         ];
 
-        // ✅ IMPORTANTE: Iniciar vacío, se llena dinámicamente
+        // Iniciar vacío, se llena dinámicamente con JavaScript
         $mform->addElement('autocomplete', 'groupids',
             get_string('groups', 'local_cadreports'),
             [], // Vacío inicialmente
             $group_options);
         $mform->setType('groupids', PARAM_INT);
 
-        // Fecha desde
+        // Fechas sin cambios
         $mform->addElement('date_time_selector', 'datefrom',
             get_string('datefrom', 'local_cadreports'),
             ['optional' => true]);
 
-        // Fecha hasta
         $mform->addElement('date_time_selector', 'dateto',
             get_string('dateto', 'local_cadreports'),
             ['optional' => true]);
     }
+
 
     /**
      * Obtener todos los cursos para autocomplete (sin cambios)
