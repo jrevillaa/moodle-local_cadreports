@@ -25,6 +25,8 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, Ajax, Notificat
 
         /**
          * Actualizar grupos basado en cursos seleccionados
+         * @param {Array} selectedCourses Array de IDs de cursos seleccionados
+         * @param {jQuery} groupSelect Elemento jQuery del select de grupos
          */
         updateGroups: function(selectedCourses, groupSelect) {
             // Limpiar grupos actuales
@@ -32,7 +34,7 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, Ajax, Notificat
 
             if (!selectedCourses || selectedCourses.length === 0) {
                 groupSelect.append('<option value="">' +
-                    M.util.get_string('selectcoursefirst', 'local_cadreports') + '</option>');
+                    'Selecciona primero uno o más cursos' + '</option>');
                 return;
             }
 
@@ -43,7 +45,7 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, Ajax, Notificat
                 done: function(groups) {
                     if (groups.length === 0) {
                         groupSelect.append('<option value="">' +
-                            M.util.get_string('nogroups', 'local_cadreports') + '</option>');
+                            'No hay grupos para los cursos seleccionados' + '</option>');
                     } else {
                         $.each(groups, function(index, group) {
                             groupSelect.append('<option value="' + group.id + '">' +
@@ -54,7 +56,7 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, Ajax, Notificat
                 fail: function(error) {
                     Notification.exception(error);
                     groupSelect.append('<option value="">' +
-                        M.util.get_string('errorloadinggroups', 'local_cadreports') + '</option>');
+                        'Error cargando grupos' + '</option>');
                 }
             }]);
         },
