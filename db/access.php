@@ -1,51 +1,28 @@
 <?php
+/**
+ * Capability definitions for local_cadreports
+ *
+ * @package    local_cadreports
+ * @copyright  2024 CAD
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = array(
-    'local/cadreports:view' => array(
-        'riskbitmask' => RISK_PERSONAL,
+$capabilities = [
+    'local/cadreports:view' => [
         'captype' => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => array(
+        'archetypes' => [
             'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_ALLOW,
-            'editingteacher' => CAP_PREVENT,
-            'teacher' => CAP_PREVENT,
-            'student' => CAP_PREVENT,
-            'guest' => CAP_PREVENT,
-            'user' => CAP_PREVENT,
-            'frontpage' => CAP_PREVENT
-        )
-    ),
-    'local/cadreports:export' => array(
-        'riskbitmask' => RISK_PERSONAL | RISK_DATALOSS,
+            'coursecreator' => CAP_ALLOW
+        ]
+    ],
+    'local/cadreports:export' => [
         'captype' => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => array(
-            'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_PREVENT,
-            'editingteacher' => CAP_PREVENT,
-            'teacher' => CAP_PREVENT,
-            'student' => CAP_PREVENT,
-            'guest' => CAP_PREVENT,
-            'user' => CAP_PREVENT,
-            'frontpage' => CAP_PREVENT
-        )
-    ),
-    'local/cadreports:viewall' => array(
-        'riskbitmask' => RISK_PERSONAL,
-        'captype' => 'read',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => array(
-            'manager' => CAP_ALLOW,
-            'coursecreator' => CAP_PREVENT,
-            'editingteacher' => CAP_PREVENT,
-            'teacher' => CAP_PREVENT,
-            'student' => CAP_PREVENT,
-            'guest' => CAP_PREVENT,
-            'user' => CAP_PREVENT,
-            'frontpage' => CAP_PREVENT
-        ),
-        'clonepermissionsfrom' => 'moodle/site:viewreports'
-    )
-);
+        'archetypes' => [
+            'manager' => CAP_ALLOW
+        ]
+    ]
+];

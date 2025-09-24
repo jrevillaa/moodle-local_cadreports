@@ -1,64 +1,58 @@
 <?php
+/**
+ * Strings de idioma para local_cadreports - Arquitectura modular
+ * Plugin local_cadreports para Moodle 4.4
+ */
+
 defined('MOODLE_INTERNAL') || die();
 
-$string['pluginname'] = 'CAD Reportes';
+// Plugin info
+$string['pluginname'] = 'Reportes CAD';
 $string['cadreports:view'] = 'Ver reportes CAD';
 $string['cadreports:export'] = 'Exportar reportes CAD';
 
 // Menú principal
-$string['reports_menu'] = 'Reportes CAD';
-$string['access_sessions'] = 'Accesos y Sesiones';
-$string['academic_grades'] = 'Registro de Notas';
-$string['quiz_summary'] = 'Resumen de Cuestionarios';
-$string['login_activity'] = 'Actividad de Usuarios';
-$string['forum_participation'] = 'Participación en Foros';
+$string['cadreports'] = 'Reportes CAD';
 
-// Filtros comunes
-$string['filter_course'] = 'Curso(s)';
-$string['filter_group'] = 'Grupo(s)';
-$string['filter_participant'] = 'Participante(s)';
-$string['filter_daterange'] = 'Rango de fechas';
-$string['filter_response_status'] = 'Estado de respuesta';
-$string['apply_filters'] = 'Aplicar filtros';
-$string['export_excel'] = 'Exportar a Excel';
-
-// Cabeceras de reportes
-$string['header_course'] = 'Curso';
-$string['header_group'] = 'Grupo';
-$string['header_lastname'] = 'Apellidos';
-$string['header_firstname'] = 'Nombres';
-$string['header_idnumber'] = 'DNI';
-$string['header_datetime'] = 'Fecha/Hora';
-$string['header_duration'] = 'Tiempo de permanencia';
-$string['header_grade'] = 'Calificación';
-$string['header_module_unit'] = 'Módulo/Unidad';
-$string['header_login_count'] = 'Número de Ingresos';
-$string['header_last_access'] = 'Último Acceso';
-$string['header_participation_date'] = 'Fecha de participación';
-$string['header_response_status'] = 'Estado de respuesta';
-$string['header_response_date'] = 'Fecha de respuesta';
-
-// Estados
-$string['status_pending'] = 'Pendiente';
-$string['status_answered'] = 'Respondido';
-$string['status_no_response'] = 'Sin respuesta';
-
-
-$string['settings'] = 'Configuración';
-$string['accessreport'] = 'Accesos y Sesiones';
+// Reportes disponibles
+$string['accessreport'] = 'Accesos y Dedicación';
 $string['gradesreport'] = 'Registro de Notas';
 $string['quizreport'] = 'Resumen de Cuestionarios';
 $string['activityreport'] = 'Actividad de Usuarios';
 $string['forumreport'] = 'Participación en Foros';
-$string['cadreports:view'] = 'Ver reportes CAD';
-$string['cadreports:export'] = 'Exportar reportes CAD';
 
-$string['selectcourses'] = 'Seleccionar cursos...';
-$string['selectgroups'] = 'Seleccionar grupos...';
-$string['selectusers'] = 'Seleccionar usuarios...';
-$string['export'] = 'Exportar';
-$string['filter'] = 'Filtrar';
-$string['error:dateorder'] = 'La fecha inicial debe ser anterior a la fecha final';
+// Formularios
+$string['filters'] = 'Filtros';
+$string['course'] = 'Curso';
+$string['allcourses'] = 'Todos los cursos';
+$string['group'] = 'Grupo';
+$string['allgroups'] = 'Todos los grupos';
+$string['nogroup'] = 'Sin grupo';
+$string['datefrom'] = 'Fecha desde';
+$string['dateto'] = 'Fecha hasta';
+$string['generatereport'] = 'Generar reporte';
+$string['selectfilters'] = 'Selecciona al menos un filtro para generar el reporte';
 
-$string['datefrom'] = 'Desde';
-$string['dateto'] = 'Hasta';
+// Tabla - Columnas comunes
+$string['order'] = 'Orden';
+$string['coursefullname'] = 'Nombre largo del curso';
+$string['courseshortname'] = 'Nombre corto del curso';
+$string['firstname'] = 'Nombres';
+$string['lastname'] = 'Apellidos';
+$string['username'] = 'Usuario';
+$string['email'] = 'Email';
+
+// Columnas específicas del reporte de accesos
+$string['dedication'] = 'Dedicación';
+
+// Exportación
+$string['exportoptions'] = 'Opciones de exportación';
+$string['downloadexcel'] = 'Descargar Excel';
+$string['downloadcsv'] = 'Descargar CSV';
+
+// Errores
+$string['error_daterange'] = 'La fecha hasta debe ser posterior a la fecha desde';
+$string['error_nofilters'] = 'Debe seleccionar al menos un filtro';
+
+// Privacidad
+$string['privacy:metadata'] = 'El plugin Reportes CAD no almacena datos personales, solo muestra información existente en Moodle.';
