@@ -1,51 +1,52 @@
 <?php
-// This file is part of Moodle - http://moodle.org/
-//
-// Moodle is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
+/**
+ * Settings para local_cadreports - Estructura modular
+ *
+ * @package    local_cadreports
+ * @copyright  2024 CAD
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
+
     // Crear categoría principal para CAD Reports
-    $ADMIN->add('localplugins', new admin_category('cadreports',
-        get_string('pluginname', 'local_cadreports')));
+    $ADMIN->add('root', new admin_category('local_cadreports',
+        get_string('cadreports', 'local_cadreports')));
 
-    // Página de configuración principal (opcional)
-    $settings = new admin_settingpage('local_cadreports',
-        get_string('settings', 'local_cadreports'));
+    // Reporte de Accesos y Dedicación
+    $ADMIN->add('local_cadreports',
+        new admin_externalpage('local_cadreports_access',
+            get_string('accessreport', 'local_cadreports'),
+            new moodle_url('/local/cadreports/reports/access.php'),
+            'local/cadreports:view'));
 
-    if ($ADMIN->fulltree) {
-        // Aquí puedes agregar configuraciones si las necesitas
-    }
+    // Reporte de Notas (para futuro)
+    $ADMIN->add('local_cadreports',
+        new admin_externalpage('local_cadreports_grades',
+            get_string('gradesreport', 'local_cadreports'),
+            new moodle_url('/local/cadreports/reports/grades.php'),
+            'local/cadreports:view'));
 
-    $ADMIN->add('cadreports', $settings);
+    // Reporte de Cuestionarios (para futuro)
+    $ADMIN->add('local_cadreports',
+        new admin_externalpage('local_cadreports_quiz',
+            get_string('quizreport', 'local_cadreports'),
+            new moodle_url('/local/cadreports/reports/quiz.php'),
+            'local/cadreports:view'));
 
-    // Registrar páginas de reportes como páginas externas
-    $ADMIN->add('cadreports', new admin_externalpage('cadreports_access',
-        get_string('accessreport', 'local_cadreports'),
-        new moodle_url('/local/cadreports/reports/access_report.php'),
-        'local/cadreports:view'));
+    // Reporte de Actividad de Usuarios (para futuro)
+    $ADMIN->add('local_cadreports',
+        new admin_externalpage('local_cadreports_activity',
+            get_string('activityreport', 'local_cadreports'),
+            new moodle_url('/local/cadreports/reports/activity.php'),
+            'local/cadreports:view'));
 
-    $ADMIN->add('cadreports', new admin_externalpage('cadreports_grades',
-        get_string('gradesreport', 'local_cadreports'),
-        new moodle_url('/local/cadreports/reports/grades_report.php'),
-        'local/cadreports:view'));
-
-    $ADMIN->add('cadreports', new admin_externalpage('cadreports_quiz',
-        get_string('quizreport', 'local_cadreports'),
-        new moodle_url('/local/cadreports/reports/quiz_report.php'),
-        'local/cadreports:view'));
-
-    $ADMIN->add('cadreports', new admin_externalpage('cadreports_activity',
-        get_string('activityreport', 'local_cadreports'),
-        new moodle_url('/local/cadreports/reports/activity_report.php'),
-        'local/cadreports:view'));
-
-    $ADMIN->add('cadreports', new admin_externalpage('cadreports_forum',
-        get_string('forumreport', 'local_cadreports'),
-        new moodle_url('/local/cadreports/reports/forum_report.php'),
-        'local/cadreports:view'));
+    // Reporte de Participación en Foros (para futuro)
+    $ADMIN->add('local_cadreports',
+        new admin_externalpage('local_cadreports_forum',
+            get_string('forumreport', 'local_cadreports'),
+            new moodle_url('/local/cadreports/reports/forum.php'),
+            'local/cadreports:view'));
 }
