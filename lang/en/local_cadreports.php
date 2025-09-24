@@ -70,6 +70,8 @@ $string['records_per_page_desc'] = 'Número máximo de registros a mostrar por p
 
 // Columnas específicas del reporte de accesos
 $string['dedication'] = 'Dedicación';
+$string['courseaccesses'] = 'Accesos al Curso'; // ✅ NUEVO
+$string['lastcourseaccess'] = 'Último Acceso'; // ✅ NUEVO
 
 // ✅ AGREGADO: Formato de duración detallada
 $string['durationformat_detailed'] = '{$a->days} días, {$a->hours} horas, {$a->minutes} minutos, {$a->seconds} segundos';
