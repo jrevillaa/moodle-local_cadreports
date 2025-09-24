@@ -26,8 +26,8 @@ define(['jquery', 'core/ajax', 'core/notification'], function($, Ajax, Notificat
                 M.util.get_string('allgroups', 'local_cadreports') + '</option>');
 
             if (courseid > 0) {
-                // Usar Ajax.call nativo de Moodle
-                var request = Ajax.call([{
+                // Usar Ajax.call nativo de Moodle sin almacenar en variable
+                Ajax.call([{
                     methodname: 'local_cadreports_get_course_groups',
                     args: {courseid: parseInt(courseid)},
                     done: function(groups) {
