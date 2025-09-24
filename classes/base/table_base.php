@@ -266,4 +266,49 @@ abstract class table_base extends \table_sql {
         // Construir SQL específico
         $this->build_specific_sql();
     }
+
+    /**
+     * ✅ MÉTODO MEJORADO: Formatear fila manteniendo datos originales
+     */
+    protected function format_and_export_row($row) {
+        // Hacer una copia de la fila para conservar datos originales
+        $export_row = clone $row;
+
+        // Aplicar formato específico para exportación
+        $this->format_export_row($export_row);
+
+        return $export_row;
+    }
+
+    /**
+     * ✅ UTILITY: Formatear timestamp de forma segura
+     * @param mixed $timestamp Timestamp a formatear
+     * @param string $format Formato de fecha (por defecto para web, '%d/%m/%Y %H:%M:%S' para CSV)
+     * @param bool $for_export Si es para exportación
+     * @return string Fecha formateada o '-'
+     */
+    protected function safe_format_timestamp($timestamp, $format = null, $for_export = false) {
+        // Si ya es un string formateado, devolverlo (evita re-procesar)
+        if (is_string($timestamp) && !is_numeric($timestamp)) {
+            // Si contiene caracteres de fecha típicos, asumir que ya está formateado
+            if (preg_match('/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/', $timestamp)) {
+                return $timestamp;
+            }
+        }
+
+        // Usar formato por defecto según contexto
+        if ($format === null) {
+            $format = $for_export ? '%d/%m/%Y %H:%M:%S' : get_string('strftimedatetimeshort', 'core_langconfig');
+        }
+
+        // Triple validación
+        if (!empty($timestamp) && is_numeric($timestamp) && $timestamp > 0) {
+            return userdate((int)$timestamp, $format);
+        }
+
+        return $for_export ? '-' : get_string('never', 'core');
+    }
+
+
+
 }

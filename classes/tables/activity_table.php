@@ -51,56 +51,66 @@ class activity_table extends table_base {
 
         $params = [];
 
-        // SQL específico para logs de actividad con información detallada
+        // SQL con campos reales de logstore_standard_log
         $fields = "CONCAT(u.id, '_', c.id, '_', COALESCE(gr.id, 0), '_', l.id) as uniqueid,
-                   u.id as userid, 
-                   c.id as courseid,
-                   c.fullname as coursefullname,
-                   c.shortname as courseshortname,
-                   COALESCE(gr.name, '') as groupname,
-                   u.firstname,
-                   u.lastname, 
-                   u.username,
-                   u.email,
-                   l.action,
-                   l.component,
-                   l.target,
-                   l.eventname,
-                   l.description,
-                   l.timecreated as datetime,
-                   COALESCE(target_info.name, '') as target_name";
+               u.id as userid, 
+               c.id as courseid,
+               c.fullname as coursefullname,
+               c.shortname as courseshortname,
+               COALESCE(gr.name, '') as groupname,
+               u.firstname,
+               u.lastname, 
+               u.username,
+               u.email,
+               l.action,
+               l.component,
+               l.target,
+               l.eventname,
+               l.objecttable,
+               l.objectid,
+               l.contextlevel,
+               l.contextinstanceid,
+               l.timecreated as datetime,
+               COALESCE(target_info.name, '') as target_name,
+               COALESCE(target_info.modname, '') as target_type";
 
-        // FROM con JOINs para obtener información de logs
+        // FROM con subconsulta más robusta para nombres de actividades
         $from = "{course} c
-                 JOIN {enrol} e ON e.courseid = c.id
-                 JOIN {user_enrolments} ue ON ue.enrolid = e.id  
-                 JOIN {user} u ON u.id = ue.userid
-                 LEFT JOIN {groups_members} gm ON gm.userid = u.id AND gm.groupid IN (
-                     SELECT id FROM {groups} WHERE courseid = c.id
-                 )
-                 LEFT JOIN {groups} gr ON gr.id = gm.groupid
-                 JOIN {logstore_standard_log} l ON l.userid = u.id AND l.courseid = c.id
-                 LEFT JOIN (
-                     SELECT 
-                         cm.id as cmid,
-                         cm.course,
-                         COALESCE(q.name, a.name, f.name, s.name, les.name, 'Actividad') as name,
-                         m.name as modname
-                     FROM {course_modules} cm
-                     JOIN {modules} m ON m.id = cm.module
-                     LEFT JOIN {quiz} q ON q.id = cm.instance AND m.name = 'quiz'
-                     LEFT JOIN {assign} a ON a.id = cm.instance AND m.name = 'assign'  
-                     LEFT JOIN {forum} f ON f.id = cm.instance AND m.name = 'forum'
-                     LEFT JOIN {scorm} s ON s.id = cm.instance AND m.name = 'scorm'
-                     LEFT JOIN {lesson} les ON les.id = cm.instance AND m.name = 'lesson'
-                 ) target_info ON target_info.cmid = l.contextinstanceid 
-                              AND l.contextlevel = 70
-                              AND target_info.course = c.id";
+             JOIN {enrol} e ON e.courseid = c.id
+             JOIN {user_enrolments} ue ON ue.enrolid = e.id  
+             JOIN {user} u ON u.id = ue.userid
+             LEFT JOIN {groups_members} gm ON gm.userid = u.id AND gm.groupid IN (
+                 SELECT id FROM {groups} WHERE courseid = c.id
+             )
+             LEFT JOIN {groups} gr ON gr.id = gm.groupid
+             JOIN {logstore_standard_log} l ON l.userid = u.id AND l.courseid = c.id
+             LEFT JOIN (
+                 SELECT 
+                     cm.id as cmid,
+                     cm.course,
+                     m.name as modname,
+                     CASE 
+                         WHEN m.name = 'quiz' THEN (SELECT name FROM {quiz} WHERE id = cm.instance)
+                         WHEN m.name = 'assign' THEN (SELECT name FROM {assign} WHERE id = cm.instance)
+                         WHEN m.name = 'forum' THEN (SELECT name FROM {forum} WHERE id = cm.instance)
+                         WHEN m.name = 'scorm' THEN (SELECT name FROM {scorm} WHERE id = cm.instance)
+                         WHEN m.name = 'lesson' THEN (SELECT name FROM {lesson} WHERE id = cm.instance)
+                         WHEN m.name = 'resource' THEN (SELECT name FROM {resource} WHERE id = cm.instance)
+                         WHEN m.name = 'url' THEN (SELECT name FROM {url} WHERE id = cm.instance)
+                         WHEN m.name = 'page' THEN (SELECT name FROM {page} WHERE id = cm.instance)
+                         ELSE 'Actividad'
+                     END as name
+                 FROM {course_modules} cm
+                 JOIN {modules} m ON m.id = cm.module
+             ) target_info ON target_info.cmid = l.contextinstanceid 
+                          AND l.contextlevel = 70
+                          AND target_info.course = c.id";
 
         // WHERE base con filtros de logs válidos
         $where = "u.deleted = 0 AND u.suspended = 0 AND ue.status = 0
-                  AND l.timecreated > 0
-                  AND l.component != ''";
+              AND l.timecreated > 0
+              AND l.component != ''
+              AND l.action != ''";
 
         // Aplicar filtros comunes
         $this->apply_common_filters($where, $params);
@@ -169,15 +179,29 @@ class activity_table extends table_base {
                 return $this->get_event_description($row);
 
             case 'datetime':
-                if (!empty($row->datetime) && is_numeric($row->datetime) && $row->datetime > 0) {
-                    return userdate((int)$row->datetime, get_string('strftimedatetimeshort', 'core_langconfig'));
-                }
-                return '-';
+                // ✅ USAR UTILITY METHOD
+                return $this->safe_format_timestamp($row->datetime, null, false);
 
             default:
                 return isset($row->$colname) ? $row->$colname : '';
         }
     }
+
+    /**
+     * Formatear fila específica para exportación
+     */
+    protected function format_export_row($row) {
+        $row->action = $this->format_action($row->action);
+        $row->component = $this->format_component($row->component);
+        $row->target = $this->format_target($row->target);
+        $row->target_name = $this->get_target_name($row);
+        $row->event_description = $this->get_event_description($row);
+
+        // ✅ USAR UTILITY METHOD para exportación
+        $row->datetime = $this->safe_format_timestamp($row->datetime, null, true);
+    }
+
+    // ✅ ELIMINADO: método format_row() para evitar conflictos
 
     /**
      * Formatear acción para mostrar
@@ -240,65 +264,72 @@ class activity_table extends table_base {
      * Obtener nombre específico del target
      */
     private function get_target_name($row) {
+        // Si tenemos nombre desde la subconsulta, usarlo
         if (!empty($row->target_name)) {
             return $row->target_name;
         }
 
-        // Fallbacks según el tipo de target
+        // Fallbacks según el tipo de target y contextlevel
         switch ($row->target) {
             case 'course':
                 return $row->coursefullname;
             case 'user':
+                // Si es un usuario específico, obtener su nombre
+                if (!empty($row->objectid) && $row->objecttable == 'user') {
+                    global $DB;
+                    $user = $DB->get_record('user', ['id' => $row->objectid], 'firstname,lastname');
+                    if ($user) {
+                        return $user->firstname . ' ' . $user->lastname;
+                    }
+                }
                 return $row->firstname . ' ' . $row->lastname;
+            case 'course_module':
+            case 'activity':
+                if (!empty($row->target_type)) {
+                    return $this->format_component('mod_' . $row->target_type);
+                }
+                return 'Actividad';
             default:
-                return '-';
+                return ucfirst($row->target);
         }
     }
 
     /**
-     * Obtener descripción del evento
+     * Obtener descripción del evento basada en eventname
      */
     private function get_event_description($row) {
-        if (!empty($row->description)) {
-            // Limpiar la descripción para mostrar
-            $description = strip_tags($row->description);
-            if (strlen($description) > 100) {
-                $description = substr($description, 0, 100) . '...';
+        // Generar descripción basada en el eventname
+        $event_descriptions = [
+            '\\core\\event\\course_viewed' => 'Accedió al curso',
+            '\\mod_quiz\\event\\course_module_viewed' => 'Vió el cuestionario',
+            '\\mod_quiz\\event\\attempt_started' => 'Inició intento de cuestionario',
+            '\\mod_quiz\\event\\attempt_submitted' => 'Envió intento de cuestionario',
+            '\\mod_quiz\\event\\attempt_reviewed' => 'Revisó intento de cuestionario',
+            '\\mod_forum\\event\\course_module_viewed' => 'Accedió al foro',
+            '\\mod_forum\\event\\discussion_created' => 'Creó discusión en foro',
+            '\\mod_forum\\event\\post_created' => 'Publicó en foro',
+            '\\mod_assign\\event\\course_module_viewed' => 'Vió la tarea',
+            '\\mod_assign\\event\\submission_created' => 'Envió tarea',
+            '\\mod_assign\\event\\submission_updated' => 'Actualizó envío de tarea',
+            '\\core\\event\\user_loggedin' => 'Inició sesión',
+            '\\core\\event\\user_loggedout' => 'Cerró sesión'
+        ];
+
+        if (isset($event_descriptions[$row->eventname])) {
+            $description = $event_descriptions[$row->eventname];
+            $target_name = $this->get_target_name($row);
+
+            if ($target_name !== '-' && !empty($target_name)) {
+                return $description . ': ' . $target_name;
             }
             return $description;
         }
 
-        // Generar descripción basada en el evento
-        return $this->generate_description($row);
-    }
-
-    /**
-     * Generar descripción basada en eventname
-     */
-    private function generate_description($row) {
-        $action_text = $this->format_action($row->action);
-        $target_text = $this->format_target($row->target);
+        // Descripción genérica
+        $action = $this->format_action($row->action);
+        $target = $this->format_target($row->target);
         $target_name = $this->get_target_name($row);
 
-        return "$action_text $target_text: $target_name";
-    }
-
-    /**
-     * Formatear fila específica para exportación
-     */
-    protected function format_export_row($row) {
-        // Formatear campos para exportación
-        $row->action = $this->format_action($row->action);
-        $row->component = $this->format_component($row->component);
-        $row->target = $this->format_target($row->target);
-        $row->target_name = $this->get_target_name($row);
-        $row->event_description = $this->get_event_description($row);
-
-        // Formatear fecha y hora para exportación
-        if (!empty($row->datetime) && is_numeric($row->datetime) && $row->datetime > 0) {
-            $row->datetime = userdate((int)$row->datetime, '%d/%m/%Y %H:%M:%S');
-        } else {
-            $row->datetime = '-';
-        }
+        return "$action $target" . ($target_name !== '-' ? ": $target_name" : '');
     }
 }
