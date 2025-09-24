@@ -56,3 +56,16 @@ $string['error_nofilters'] = 'Debe seleccionar al menos un filtro';
 
 // Privacidad
 $string['privacy:metadata'] = 'El plugin Reportes CAD no almacena datos personales, solo muestra información existente en Moodle.';
+
+// Sección principal
+$string['cadreports'] = 'Reportes CAD';
+$string['reports'] = 'Reportes';
+$string['settings'] = 'Configuración';
+
+// Configuraciones
+$string['session_gap'] = 'Tiempo máximo de sesión';
+$string['session_gap_desc'] = 'Tiempo máximo en segundos entre clicks para considerar que el usuario sigue en la misma sesión de estudio.';
+$string['records_per_page'] = 'Registros por página';
+$string['records_per_page_desc'] = 'Número máximo de registros a mostrar por página en los reportes.';
+
+// ... resto del código existente ...

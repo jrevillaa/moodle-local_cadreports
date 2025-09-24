@@ -5,8 +5,7 @@
  */
 
 require_once('../../../config.php');
-global $CFG;
-require_once($CFG->dirroot.'/local/cadreports/classes/reports/access_report.php');
+require_once($CFG->dirroot.'/local/cadreports/classes/autoload.php');
 
 use local_cadreports\reports\access_report;
 

@@ -154,7 +154,7 @@ abstract class table_base extends \table_sql {
 
             case 'email':
                 // Solo mostrar email si el usuario tiene permisos
-                if (has_capability('moodle/course:viewhiddenuserfields', $this->get_context())) {
+                if (has_capability('moodle/course:viewhiddenuserfields', \context_system::instance())) {
                     return $row->email;
                 }
                 return '-';
@@ -164,12 +164,6 @@ abstract class table_base extends \table_sql {
         }
     }
 
-    /**
-     * Obtener contexto apropiado para verificar permisos
-     */
-    protected function get_context() {
-        return \context_system::instance();
-    }
 
     /**
      * Formatear filas para exportación
