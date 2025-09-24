@@ -12,7 +12,6 @@ define(['jquery'], function($) {
          */
         init: function() {
             var courseSelect = $('#id_courseids');
-            var groupSelect = $('#id_groupids');
 
             // Escuchar cambios en la selección de cursos
             courseSelect.on('change', function() {
@@ -26,6 +25,7 @@ define(['jquery'], function($) {
          */
         updateGroupsAutocomplete: function(selectedCourses) {
             var groupSelect = $('#id_groupids');
+            var autocompleteContainer, inputElement;
 
             if (!selectedCourses || selectedCourses.length === 0) {
                 // Sin cursos seleccionados - deshabilitar grupos
@@ -33,23 +33,23 @@ define(['jquery'], function($) {
                 groupSelect.empty();
 
                 // Actualizar placeholder
-                var autocompleteContainer = groupSelect.closest('.form-autocomplete-container');
+                autocompleteContainer = groupSelect.closest('.form-autocomplete-container');
                 if (autocompleteContainer.length) {
-                    var input = autocompleteContainer.find('.form-autocomplete-original-text');
-                    input.attr('placeholder', 'Selecciona primero uno o más cursos');
+                    inputElement = autocompleteContainer.find('.form-autocomplete-original-text');
+                    inputElement.attr('placeholder', 'Selecciona primero uno o más cursos');
                 }
             } else {
                 // Con cursos seleccionados - habilitar y configurar AJAX
                 groupSelect.prop('disabled', false);
 
                 // Actualizar placeholder
-                var autocompleteContainer = groupSelect.closest('.form-autocomplete-container');
+                autocompleteContainer = groupSelect.closest('.form-autocomplete-container');
                 if (autocompleteContainer.length) {
-                    var input = autocompleteContainer.find('.form-autocomplete-original-text');
-                    input.attr('placeholder', 'Buscar grupos en cursos seleccionados...');
+                    inputElement = autocompleteContainer.find('.form-autocomplete-original-text');
+                    inputElement.attr('placeholder', 'Buscar grupos en cursos seleccionados...');
                 }
 
-                // ✅ CLAVE: Pasar courseids como parámetro adicional al AJAX
+                // Pasar courseids como parámetro adicional al AJAX
                 var ajaxConfig = groupSelect.data('ajax');
                 if (ajaxConfig) {
                     // Agregar courseids a los parámetros AJAX
