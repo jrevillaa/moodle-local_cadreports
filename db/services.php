@@ -23,4 +23,12 @@ $functions = [
         'ajax'        => true,
         'capabilities' => 'local/cadreports:view',
     ],
+    'local_cadreports_search_enrolled_users' => [
+        'classname'   => 'local_cadreports\external\search_enrolled_users',
+        'methodname'  => 'execute',
+        'description' => 'Search for enrolled students by username or email',
+        'type'        => 'read',
+        'ajax'        => true,
+        'loginrequired' => true,
+    ],
 ];

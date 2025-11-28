@@ -1,7 +1,8 @@
 <?php
 /**
- * Formulario específico para reporte de notas - TODAS las actividades
- * Plugin local_cadreports para Moodle 4.4
+ * Formulario específico para Registro de Notas (dos caminos de filtro)
+ * - Modo "bycourse": cursos y/o grupos (multi)
+ * - Modo "byuser"  : búsqueda por username/email (múltiples, con autocomplete tags)
  */
 
 namespace local_cadreports\forms;
@@ -12,31 +13,60 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/local/cadreports/classes/base/form_base.php');
 
-/**
- * Formulario específico del reporte de notas
- */
 class grades_form extends form_base {
 
     /**
-     * ✅ SIMPLIFICADO: No hay filtros específicos, mostrar TODAS las actividades
+     * Elementos específicos (además de los base del form_base)
+     * El form_base ya agrega: courseids, groupids, datefrom, dateto, botones, etc.
      */
     protected function add_specific_elements($mform) {
-        // Sin filtros adicionales - mostrar todas las actividades y notas finales
-        $mform->addElement('static', 'info', '',
-            get_string('allactivitiesinfo', 'local_cadreports'));
+        global $PAGE;
+
+        // Selector de modo
+        $mform->addElement('select', 'mode', get_string('filtermode', 'local_cadreports'), [
+            'bycourse' => get_string('filtermode_bycourse', 'local_cadreports'),
+            'byuser'   => get_string('filtermode_byuser', 'local_cadreports'),
+        ]);
+        $mform->setType('mode', PARAM_ALPHA);
+        $mform->setDefault('mode', 'bycourse');
+
+        // Autocomplete con AJAX para usuarios matriculados
+        $mform->addElement('autocomplete', 'userquery', get_string('userquery', 'local_cadreports'), [],
+            [
+                'multiple' => true,
+                'ajax' => 'local_cadreports/form_userquery_selector',
+                'placeholder' => get_string('userquery_placeholder', 'local_cadreports'),
+                'noselectionstring' => get_string('allusers', 'local_cadreports'),
+            ]
+        );
+        $mform->setType('userquery', PARAM_RAW);
+        $mform->addHelpButton('userquery', 'userquery', 'local_cadreports');
+
+        // Cargar el módulo AMD para mostrar/ocultar campos
+        $PAGE->requires->js_call_amd('local_cadreports/form_grades_toggle', 'init');
     }
 
     /**
-     * Validación específica del reporte de notas
+     * Validación específica:
+     * - En bycourse: se exige al menos un curso o un grupo
+     * - En byuser  : se exige al menos un token en userquery (array)
      */
     protected function specific_validation($data, $files) {
         $errors = [];
+        $mode = isset($data['mode']) ? $data['mode'] : 'bycourse';
 
-        // Validar que al menos un filtro esté activo
-        if (empty($data['courseids']) && empty($data['datefrom']) && empty($data['dateto'])) {
-            $errors['courseids'] = get_string('error_nofilters', 'local_cadreports');
+        if ($mode === 'byuser') {
+            $tokens = is_array($data['userquery'] ?? null) ? array_filter($data['userquery']) : [];
+            if (empty($tokens)) {
+                $errors['userquery'] = get_string('error_userquery_required', 'local_cadreports');
+            }
+        } else {
+            $hascourses = !empty($data['courseids']) && is_array($data['courseids']);
+            $hasgroups  = !empty($data['groupids'])  && is_array($data['groupids']);
+            if (!$hascourses && !$hasgroups) {
+                $errors['courseids'] = get_string('error_course_or_group_required', 'local_cadreports');
+            }
         }
-
         return $errors;
     }
 }
