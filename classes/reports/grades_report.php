@@ -36,15 +36,12 @@ class grades_report extends report_base {
 
     /**
      * Filtros adicionales propios de este reporte que el report_base debe conocer.
-     * Sustituye filtros anteriores (activitytype/gradeitemid) por los nuevos:
-     * - mode: 'bycourse' | 'byuser'
-     * - userquery: texto para buscar por username/email (tokens separados por coma o salto de línea)
+     * Los filtros comunes (mode, userquery, courseids, etc.) ya se procesan en report_base
+     *
+     * @return array Filtros adicionales específicos (vacío para este reporte)
      */
     protected function get_additional_filters() {
-        return [
-            'mode' => optional_param('mode', 'bycourse', PARAM_ALPHA),
-            'userquery' => optional_param('userquery', '', PARAM_RAW_TRIMMED)
-        ];
+        return [];
     }
 
     /**

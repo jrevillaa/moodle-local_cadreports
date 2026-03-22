@@ -41,7 +41,15 @@ abstract class form_base extends \moodleform {
      * Añadir elementos base comunes con autocomplete dinámico CORREGIDO
      */
     protected function add_base_elements($mform) {
-        // Autocomplete de cursos (sin cambios)
+        // ✅ NUEVO: Selector de modo de filtro
+        $mform->addElement('select', 'mode', get_string('filtermode', 'local_cadreports'), [
+            'bycourse' => get_string('filtermode_bycourse', 'local_cadreports'),
+            'byuser'   => get_string('filtermode_byuser', 'local_cadreports'),
+        ]);
+        $mform->setType('mode', PARAM_ALPHA);
+        $mform->setDefault('mode', 'bycourse');
+
+        // Autocomplete de cursos (con opción "Todos los cursos")
         $course_options = [
             'multiple' => true,
             'noselectionstring' => get_string('selectcourses', 'local_cadreports'),
@@ -71,6 +79,19 @@ abstract class form_base extends \moodleform {
             $group_options);
         $mform->setType('groupids', PARAM_INT);
 
+        // ✅ NUEVO: Autocomplete para usuarios con tags para permitir múltiples selecciones
+        $mform->addElement('autocomplete', 'userquery', get_string('userquery', 'local_cadreports'), [],
+            [
+                'tags' => true,  // Usar tags en lugar de multiple para arrays
+                'multiple' => true,
+                'placeholder' => get_string('userquery_placeholder', 'local_cadreports'),
+                'noselectionstring' => get_string('allusers', 'local_cadreports'),
+            ]
+        );
+        // setType debe ser PARAM_TEXT para cada elemento del array
+        $mform->setType('userquery', PARAM_TEXT);
+        $mform->addHelpButton('userquery', 'userquery', 'local_cadreports');
+
         // Fechas sin cambios
         $mform->addElement('date_time_selector', 'datefrom',
             get_string('datefrom', 'local_cadreports'),
@@ -89,6 +110,9 @@ abstract class form_base extends \moodleform {
         global $DB;
 
         $courses = [];
+
+        // ✅ NUEVO: Agregar opción especial "Todos los cursos" con ID -1
+        $courses[-1] = get_string('allcourses_option', 'local_cadreports');
 
         $sql = "SELECT DISTINCT c.id, c.fullname, c.shortname 
                 FROM {course} c
@@ -113,12 +137,19 @@ abstract class form_base extends \moodleform {
     }
 
     /**
-     * ✅ NUEVO: JavaScript para manejar autocomplete dinámico
+     * Agregar JavaScript para autocomplete dinámico
      */
     protected function add_javascript() {
         global $PAGE;
 
+        // Cargar módulo para actualizar grupos dinámicamente
         $PAGE->requires->js_call_amd('local_cadreports/dynamic_groups', 'init');
+
+        // ✅ NUEVO: Cargar módulo para buscar usuarios dinámicamente
+        $PAGE->requires->js_call_amd('local_cadreports/dynamic_users', 'init');
+
+        // Cargar módulo para mostrar/ocultar campos según modo
+        $PAGE->requires->js_call_amd('local_cadreports/form_grades_toggle', 'init');
     }
 
     // Resto de métodos sin cambios...
@@ -128,6 +159,25 @@ abstract class form_base extends \moodleform {
         if (!empty($data['datefrom']) && !empty($data['dateto'])) {
             if ($data['datefrom'] >= $data['dateto']) {
                 $errors['dateto'] = get_string('error_daterange', 'local_cadreports');
+            }
+        }
+
+        // ✅ NUEVO: Validación según modo seleccionado
+        $mode = isset($data['mode']) ? $data['mode'] : 'bycourse';
+
+        if ($mode === 'byuser') {
+            // Validar que haya al menos un usuario en userquery
+            $tokens = is_array($data['userquery'] ?? null) ? array_filter($data['userquery']) : [];
+            if (empty($tokens)) {
+                $errors['userquery'] = get_string('error_userquery_required', 'local_cadreports');
+            }
+        } else {
+            // Validar que haya al menos un curso o grupo seleccionado
+            // Nota: -1 (todos los cursos) es válido
+            $hascourses = !empty($data['courseids']) && is_array($data['courseids']);
+            $hasgroups  = !empty($data['groupids'])  && is_array($data['groupids']);
+            if (!$hascourses && !$hasgroups) {
+                $errors['courseids'] = get_string('error_course_or_group_required', 'local_cadreports');
             }
         }
 

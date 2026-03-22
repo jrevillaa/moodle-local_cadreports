@@ -40,7 +40,7 @@ define(['jquery'], function($) {
         setFieldsVisibility(['fitem_id_courseids', 'fitem_id_groupids'], isByCourse);
 
         // Ocultar siempre las fechas (no se usan en este reporte)
-        setFieldsVisibility(['fitem_id_datefrom', 'fitem_id_dateto'], false);
+        setFieldsVisibility(['fitem_id_datefrom', 'fitem_id_dateto'], true);
 
         // Mostrar campo de usuarios solo en modo "byuser"
         setFieldsVisibility(['fitem_id_userquery'], !isByCourse);

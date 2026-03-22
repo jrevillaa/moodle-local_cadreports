@@ -41,10 +41,17 @@ abstract class table_base extends \table_sql {
         $baseurl = new \moodle_url($PAGE->url);
         foreach ($this->filters as $key => $value) {
             if (!empty($value) && $key !== 'download') {
-                // ✅ NUEVO: Manejar arrays convirtiéndolos a string
                 if (is_array($value)) {
-                    // Convertir array a string separado por comas para URL
-                    $baseurl->param($key, implode(',', $value));
+                    // ✅ CORREGIDO: Serializar arrays correctamente para URLs de Moodle
+                    // Agregar cada elemento del array individualmente con notación de corchetes
+                    // Ejemplo: courseids[0]=1&courseids[1]=2
+                    // IMPORTANTE: Incluir -1 (Todos los cursos) en la URL
+                    foreach ($value as $index => $item) {
+                        // Permitir -1 (Todos los cursos) y cualquier valor no vacío
+                        if ($item !== null && $item !== '') {
+                            $baseurl->param("{$key}[{$index}]", $item);
+                        }
+                    }
                 } else {
                     $baseurl->param($key, $value);
                 }
@@ -116,31 +123,82 @@ abstract class table_base extends \table_sql {
     }
 
     /**
-     * Aplicar filtros comunes (múltiples cursos, múltiples grupos, fechas)
+     * Aplicar filtros comunes (múltiples cursos, múltiples grupos, fechas, usuarios)
      */
     protected function apply_common_filters(&$where, &$params) {
         global $DB; // ✅ AGREGADO: faltaba esta línea
 
-        // Filtro por múltiples cursos
-        if (!empty($this->filters['courseids'])) {
+        // ✅ NUEVO: Filtro por modo y usuarios
+        $mode = isset($this->filters['mode']) ? $this->filters['mode'] : 'bycourse';
+
+        if ($mode === 'byuser' && !empty($this->filters['userquery'])) {
+            // Modo: buscar por usuarios específicos
+            $userquery = is_array($this->filters['userquery']) ? 
+                $this->filters['userquery'] : 
+                [$this->filters['userquery']];
+
+            // Filtrar tokens vacíos
+            $userquery = array_filter($userquery, function($token) {
+                return !empty(trim($token));
+            });
+
+            if (!empty($userquery)) {
+                $user_conditions = [];
+                $user_params = [];
+                $param_counter = 0;
+
+                foreach ($userquery as $token) {
+                    $token = trim($token);
+                    $param_counter++;
+                    
+                    // Buscar por username exacto, email exacto, o nombre/apellido parcial
+                    $user_conditions[] = "(
+                        u.username = :usertoken{$param_counter} OR
+                        u.email = :emailtoken{$param_counter} OR
+                        " . $DB->sql_like('u.firstname', ":firstnametoken{$param_counter}", false) . " OR
+                        " . $DB->sql_like('u.lastname', ":lastnametoken{$param_counter}", false) . " OR
+                        " . $DB->sql_like($DB->sql_concat('u.firstname', "' '", 'u.lastname'), ":fullnametoken{$param_counter}", false) . "
+                    )";
+                    
+                    $user_params["usertoken{$param_counter}"] = $token;
+                    $user_params["emailtoken{$param_counter}"] = $token;
+                    $user_params["firstnametoken{$param_counter}"] = '%' . $DB->sql_like_escape($token) . '%';
+                    $user_params["lastnametoken{$param_counter}"] = '%' . $DB->sql_like_escape($token) . '%';
+                    $user_params["fullnametoken{$param_counter}"] = '%' . $DB->sql_like_escape($token) . '%';
+                }
+
+                if (!empty($user_conditions)) {
+                    $where .= " AND (" . implode(' OR ', $user_conditions) . ")";
+                    $params = array_merge($params, $user_params);
+                }
+            }
+        }
+
+        // Filtro por múltiples cursos (solo si NO es modo byuser)
+        if ($mode === 'bycourse' && !empty($this->filters['courseids'])) {
             $courseids = is_array($this->filters['courseids']) ?
                 $this->filters['courseids'] :
                 [$this->filters['courseids']];
 
-            // Filtrar solo IDs válidos
-            $courseids = array_filter($courseids, function($id) {
-                return !empty($id) && is_numeric($id);
-            });
+            // ✅ NUEVO: Detectar si se seleccionó "Todos los cursos" (ID -1)
+            if (!in_array(-1, $courseids)) {
+                // No se seleccionó "Todos los cursos", aplicar filtro normal
+                // Filtrar solo IDs válidos (excluir -1 y valores no numéricos)
+                $courseids = array_filter($courseids, function($id) {
+                    return !empty($id) && is_numeric($id) && $id > 0;
+                });
 
-            if (count($courseids) > 0) {
-                list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'course');
-                $where .= " AND c.id $insql";
-                $params = array_merge($params, $inparams);
+                if (count($courseids) > 0) {
+                    list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'course');
+                    $where .= " AND c.id $insql";
+                    $params = array_merge($params, $inparams);
+                }
             }
+            // Si contiene -1, no aplicar filtro de cursos (mostrar todos)
         }
 
-        // Filtro por múltiples grupos
-        if (!empty($this->filters['groupids'])) {
+        // Filtro por múltiples grupos (solo si NO es modo byuser)
+        if ($mode === 'bycourse' && !empty($this->filters['groupids'])) {
             $groupids = is_array($this->filters['groupids']) ?
                 $this->filters['groupids'] :
                 [$this->filters['groupids']];

@@ -61,6 +61,7 @@ class forum_table extends table_base {
                    u.lastname, 
                    u.username,
                    u.email,
+                   f.id as forum_id,
                    f.name as forum_name,
                    COALESCE(cm.idnumber, '') as forum_idnumber,
                    COALESCE(user_participation.latest_post, 0) as participation_date,
@@ -97,7 +98,7 @@ class forum_table extends table_base {
                          MAX(fp2.created) as latest_post
                      FROM {forum_posts} fp2
                      JOIN {forum_discussions} fd2 ON fd2.id = fp2.discussion
-                     WHERE fp2.parent > 0"; // Solo posts de respuesta, no posts iniciales
+                     WHERE 1=1"; // ✅ CORREGIDO: Contar TODOS los posts (iniciales y respuestas)
 
         // Aplicar filtro de fechas para participación
         if (!empty($this->filters['datefrom'])) {
@@ -151,7 +152,8 @@ class forum_table extends table_base {
                       cm.groupmode = 0 
                       OR gr.id IS NOT NULL 
                       OR cm.groupmode = 1
-                  )";
+                  )
+                  AND user_participation.post_count > 0"; // ✅ NUEVO: Solo mostrar alumnos con participación
 
         // Aplicar filtros comunes
         $this->apply_common_filters($where, $params);
@@ -198,7 +200,16 @@ class forum_table extends table_base {
         // Procesar columnas específicas de foros
         switch ($colname) {
             case 'forum_name':
-                return !empty($row->forum_name) ? $row->forum_name : '-';
+                if (!empty($row->forum_name) && !empty($row->forum_id)) {
+                    // No generar link si estamos exportando
+                    if ($this->is_downloading()) {
+                        return $row->forum_name;
+                    }
+                    // Generar link al foro que se abre en nueva pestaña
+                    $forum_url = new \moodle_url('/mod/forum/view.php', ['f' => $row->forum_id]);
+                    return \html_writer::link($forum_url, format_string($row->forum_name), ['target' => '_blank']);
+                }
+                return '-';
 
             case 'forum_idnumber':
                 return !empty($row->forum_idnumber) ? $row->forum_idnumber : '-';

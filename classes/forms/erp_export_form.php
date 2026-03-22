@@ -1,7 +1,7 @@
 <?php
 /**
- * Formulario específico para reporte de accesos y dedicación
- * Filtros: (Curso y Grupo) o (Participante), Rango Fecha
+ * Formulario específico para Exportación de Notas a ERP
+ * Usa los mismos filtros que grades: bycourse y byuser
  *
  * @package    local_cadreports
  * @copyright  2024 Jair Revilla <jrevilla492@gmail.com>
@@ -17,13 +17,13 @@ defined('MOODLE_INTERNAL') || die();
 require_once($CFG->dirroot.'/local/cadreports/classes/base/form_base.php');
 
 /**
- * Formulario específico del reporte de accesos
- * Usa la misma estructura que grades_form con modo bycourse/byuser
+ * Clase del formulario para exportación a ERP
+ * Extiende form_base para aprovechar filtros comunes (courseids, groupids, etc.)
  */
-class access_form extends form_base {
+class erp_export_form extends form_base {
 
     /**
-     * Elementos específicos del formulario de accesos
+     * Elementos específicos del formulario de exportación a ERP
      * ✅ NOTA: mode y userquery ahora están en form_base.php, no duplicar aquí
      *
      * @param object $mform Instancia del formulario
@@ -32,7 +32,7 @@ class access_form extends form_base {
         // ✅ Ya no es necesario agregar 'mode' ni 'userquery' aquí
         // Estos campos ya están en form_base.php
         
-        // Si necesitas agregar campos específicos solo para accesos, agrégalos aquí
+        // Si necesitas agregar campos específicos solo para ERP export, agrégalos aquí
         // Por ahora, este formulario no tiene campos adicionales específicos
     }
 
@@ -47,7 +47,7 @@ class access_form extends form_base {
     protected function specific_validation($data, $files) {
         $errors = [];
         
-        // Agregar validaciones específicas del reporte de accesos aquí si es necesario
+        // Agregar validaciones específicas del reporte ERP aquí si es necesario
         // Por ahora, la validación base es suficiente
         
         return $errors;

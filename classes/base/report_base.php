@@ -69,53 +69,68 @@ abstract class report_base {
         require_capability('local/cadreports:view', $this->context);
     }
 
-    /**
-     * Procesar filtros desde formulario o URL
-     */
     protected function process_filters() {
-        // Función helper para procesar arrays de IDs
-        $process_array_param = function($name, $form_data) {
-            // Primero intentar desde formulario
-            if ($form_data && isset($form_data->$name) && is_array($form_data->$name)) {
-                return $form_data->$name;
-            }
-
-            // Luego desde URL (puede venir como string separado por comas)
-            $url_value = optional_param($name, '', PARAM_RAW);
-            if (!empty($url_value)) {
-                if (is_array($url_value)) {
-                    return array_map('intval', $url_value);
-                } else {
-                    // Convertir string separado por comas a array
-                    return array_map('intval', explode(',', $url_value));
-                }
-            }
-
-            return [];
-        };
-
-        // Obtener datos del formulario
+        global $CFG;
+        
+        // Obtener datos del formulario primero
         $form_data = $this->get_form()->get_data();
+
+        // Inicializar filtros con valores por defecto
+        $this->filters = [
+            'mode' => 'bycourse',
+            'courseids' => [],
+            'groupids' => [],
+            'userquery' => [],
+            'datefrom' => 0,
+            'dateto' => 0,
+            'download' => ''
+        ];
 
         if ($form_data) {
             // Usar datos del formulario (ya procesados y validados)
-            $this->filters = [
-                'courseids' => isset($form_data->courseids) ? $form_data->courseids : [],  // ✅ ARRAY
-                'groupids' => isset($form_data->groupids) ? $form_data->groupids : [],    // ✅ ARRAY
-                'datefrom' => isset($form_data->datefrom) ? $form_data->datefrom : 0,
-                'dateto' => isset($form_data->dateto) ? $form_data->dateto : 0,
-                'download' => optional_param('download', '', PARAM_ALPHA)
-            ];
-        } else {
-            // Fallback a parámetros URL
-            $this->filters = [
-                'courseids' => $process_array_param('courseids', null),  // ✅ ARRAY
-                'groupids' => $process_array_param('groupids', null),    // ✅ ARRAY
-                'datefrom' => optional_param('datefrom', 0, PARAM_INT),
-                'dateto' => optional_param('dateto', 0, PARAM_INT),
-                'download' => optional_param('download', '', PARAM_ALPHA)
-            ];
+            if (isset($form_data->mode)) {
+                $this->filters['mode'] = $form_data->mode;
+            }
+            if (isset($form_data->courseids)) {
+                $this->filters['courseids'] = is_array($form_data->courseids) ? $form_data->courseids : [];
+            }
+            if (isset($form_data->groupids)) {
+                $this->filters['groupids'] = is_array($form_data->groupids) ? $form_data->groupids : [];
+            }
+            if (isset($form_data->userquery)) {
+                $userquery = $form_data->userquery;
+                // Convertir a array si no lo es
+                if (!is_array($userquery)) {
+                    $userquery = empty($userquery) ? [] : [$userquery];
+                }
+                
+                // Filtrar el marcador de Moodle y valores vacíos
+                $userquery = array_filter($userquery, function($value) {
+                    return !empty($value) && $value !== '_qf__force_multiselect_submission';
+                });
+                
+                $this->filters['userquery'] = array_values($userquery); // Reindexar array
+            }
+            if (isset($form_data->datefrom)) {
+                $this->filters['datefrom'] = $form_data->datefrom;
+            }
+            if (isset($form_data->dateto)) {
+                $this->filters['dateto'] = $form_data->dateto;
+            }
+        } else if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            // Solo usar optional_param si NO es POST (para evitar conflictos con arrays)
+            // Esto maneja el caso de parámetros en URL (GET)
+            $this->filters['mode'] = optional_param('mode', 'bycourse', PARAM_ALPHA);
+            $this->filters['courseids'] = optional_param_array('courseids', [], PARAM_INT);
+            $this->filters['groupids'] = optional_param_array('groupids', [], PARAM_INT);
+            $this->filters['userquery'] = optional_param_array('userquery', [], PARAM_TEXT);
+            $this->filters['datefrom'] = optional_param('datefrom', 0, PARAM_INT);
+            $this->filters['dateto'] = optional_param('dateto', 0, PARAM_INT);
         }
+        // Si es POST pero no hay form_data, mantener valores por defecto
+
+        // Download siempre viene de parámetro GET (para exportación)
+        $this->filters['download'] = isset($_GET['download']) ? clean_param($_GET['download'], PARAM_ALPHA) : '';
 
         // Permitir filtros adicionales específicos del reporte
         $additional_filters = $this->get_additional_filters();
@@ -131,10 +146,10 @@ abstract class report_base {
         $form_data = $this->get_form()->get_data();
 
         if ($form_data) {
-            return !empty($form_data->courseids) || !empty($form_data->datefrom) || !empty($form_data->dateto);
+            return !empty($form_data->courseids) || !empty($form_data->groupids) || !empty($form_data->userquery) || !empty($form_data->datefrom) || !empty($form_data->dateto);
         }
 
-        return !empty($this->filters['courseids']) || !empty($this->filters['datefrom']) || !empty($this->filters['dateto']);
+        return !empty($this->filters['courseids']) || !empty($this->filters['groupids']) || !empty($this->filters['userquery']) || !empty($this->filters['datefrom']) || !empty($this->filters['dateto']);
     }
 
 

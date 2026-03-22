@@ -1,7 +1,11 @@
 <?php
 /**
- * Tabla específica para Registro de Notas
- * CORREGIDO: Elimina duplicados y muestra todos los usuarios matriculados
+ * Tabla específica para Exportación de Notas a ERP
+ * Genera estructura: proyecto, dni, nota
+ *
+ * @package    local_cadreports
+ * @copyright  2024 Jair Revilla <jrevilla492@gmail.com>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace local_cadreports\tables;
@@ -12,80 +16,87 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot.'/local/cadreports/classes/base/table_base.php');
 
-class grades_table extends table_base {
+/**
+ * Clase de tabla para exportación a ERP
+ * Extiende table_base y define columnas específicas
+ */
+class erp_export_table extends table_base {
 
-    /** @var array */
+    /** @var array Filtros aplicados */
     protected $filters;
 
+    /**
+     * Constructor de la tabla
+     *
+     * @param string $uniqueid Identificador único de la tabla
+     * @param array $filters Filtros aplicados al reporte
+     */
     public function __construct(string $uniqueid, array $filters) {
         parent::__construct($uniqueid);
         $this->filters = $filters ?? [];
         $this->setup_table();
     }
 
+    /**
+     * Define las columnas específicas de la tabla de exportación a ERP
+     * Columnas: proyecto, dni, nota
+     *
+     * @return array Array con columnas y headers
+     */
     protected function setup_specific_columns() {
         $cols = [
-            'groupname'   => get_string('group'),
-            'coursename'  => get_string('course'),
-            'courseshort' => get_string('shortname'),
-            'lastname'    => get_string('lastname'),
-            'firstname'   => get_string('firstname'),
-            'dni'         => 'DNI',
-            'finalgrade'  => 'Nota'
+            'proyecto' => get_string('proyecto', 'local_cadreports'),
+            'dni'      => get_string('dni', 'local_cadreports'),
+            'nota'     => get_string('nota', 'local_cadreports')
         ];
         return [array_keys($cols), array_values($cols)];
     }
 
+    /**
+     * Construye la consulta SQL específica para obtener datos de exportación a ERP
+     * Incluye lógica para extraer código de proyecto del nombre del grupo
+     */
     protected function build_specific_sql() {
         global $DB;
 
-        // Subconsulta para agregar grupos por usuario-curso (evita duplicados en el JOIN principal)
-        $concat = $DB->sql_concat('g.name', "' ('", 'g.idnumber', "')'");
-        $grouplabel = "CASE WHEN g.idnumber IS NULL OR g.idnumber = '' THEN g.name ELSE {$concat} END";
-        $groupagg = $DB->sql_group_concat('DISTINCT '.$grouplabel, ', ');
-
-        // Subconsulta para obtener grupos del usuario en el curso
-        $groupsubquery = "
-            SELECT gm.userid, g.courseid, {$groupagg} AS groupnames
-            FROM {groups_members} gm
-            JOIN {groups} g ON g.id = gm.groupid
-            GROUP BY gm.userid, g.courseid
-        ";
-
+        // Identificador único por usuario-curso
         $unique = $DB->sql_concat('u.id', "'_'", 'c.id');
 
+        // Campos a seleccionar
         $fields = "
             {$unique}    AS uniqueid,
             u.id         AS userid,
-            u.firstname  AS firstname,
-            u.lastname   AS lastname,
             u.username   AS dni,
             c.id         AS courseid,
-            c.fullname   AS coursename,
-            c.shortname  AS courseshort,
+            g.name       AS groupname,
             gg.finalgrade AS finalgrade,
-            COALESCE(grp.groupnames, '-') AS groupname
+            gi.grademax   AS grademax
         ";
 
-        // JOIN principal: enrol -> user_enrolments -> user
-        // LEFT JOIN: grupos (subconsulta) y notas
+        // FROM con JOINs necesarios
         $from = "
             {enrol} e
             JOIN {user_enrolments} ue ON ue.enrolid = e.id
             JOIN {user} u             ON u.id = ue.userid
             JOIN {course} c           ON c.id = e.courseid
 
-            LEFT JOIN ({$groupsubquery}) grp ON grp.userid = u.id AND grp.courseid = c.id
+            LEFT JOIN {groups_members} gm ON gm.userid = u.id
+            LEFT JOIN {groups} g          ON g.id = gm.groupid AND g.courseid = c.id
 
             LEFT JOIN {grade_items} gi    ON gi.courseid = c.id AND gi.itemtype = 'course'
             LEFT JOIN {grade_grades} gg   ON gg.itemid = gi.id AND gg.userid = u.id
         ";
 
-        // ✅ NUEVO: Excluir usuarios sin nota final
-        $where = "c.id <> :siteid AND u.deleted = 0 AND ue.status = 0";
+        // Condiciones WHERE base
+        // ✅ NUEVO: Excluir usuarios sin grupo O sin nota
+        $where = "c.id <> :siteid 
+                  AND u.deleted = 0 
+                  AND ue.status = 0
+                  AND g.id IS NOT NULL
+                  AND gg.finalgrade IS NOT NULL";
         $params = ['siteid' => SITEID];
 
-        // === Filtros ===
+        // === Aplicar filtros ===
         $mode = $this->filters['mode'] ?? 'bycourse';
 
         if ($mode === 'byuser') {
@@ -131,11 +142,10 @@ class grades_table extends table_base {
                 }
             }
 
-            // Filtrar por grupos: usa subconsulta para NO excluir usuarios sin grupo
+            // Filtrar por grupos
             if (!empty($this->filters['groupids']) && is_array($this->filters['groupids'])) {
                 $groupids = array_values(array_filter($this->filters['groupids'], 'is_numeric'));
                 if ($groupids) {
-                    // Subconsulta: usuarios que están en los grupos especificados
                     list($insql, $inparams) = $DB->get_in_or_equal($groupids, SQL_PARAMS_NAMED, 'gid');
                     $where .= " AND u.id IN (
                         SELECT gm2.userid
@@ -147,65 +157,118 @@ class grades_table extends table_base {
             }
         }
 
-        // No necesitas GROUP BY porque la subconsulta ya agrupa los grupos
+        // Configurar SQL en la tabla
         $this->set_sql($fields, $from, $where, $params);
 
-        // COUNT para paginación
+        // SQL para contar registros (paginación)
         $countsql = "SELECT COUNT(DISTINCT {$unique}) FROM {$from} WHERE {$where}";
         $this->set_count_sql($countsql, $params);
     }
 
+    /**
+     * Formatea las columnas personalizadas de la tabla
+     *
+     * @param string $colname Nombre de la columna
+     * @param object $row Fila de datos
+     * @return string Valor formateado
+     */
     public function other_cols($colname, $row) {
         $dash = '-';
+
         switch ($colname) {
-            case 'groupname':
-                $val = (string)($row->groupname ?? '');
-                return ($val !== '' && $val !== '-') ? ($this->is_downloading() ? $val : format_string($val)) : $dash;
-
-            case 'coursename':
-                $val = (string)($row->coursename ?? '');
-                return $val !== '' ? format_string($val) : $dash;
-
-            case 'courseshort':
-                $val = (string)($row->courseshort ?? '');
-                return $val !== '' ? s($val) : $dash;
-
-            case 'lastname':
-                $val = (string)($row->lastname ?? '');
-                return $val !== '' ? s($val) : $dash;
-
-            case 'firstname':
-                $val = (string)($row->firstname ?? '');
-                return $val !== '' ? s($val) : $dash;
+            case 'proyecto':
+                return $this->format_proyecto($row->groupname ?? '');
 
             case 'dni':
                 $val = (string)($row->dni ?? '');
                 return $val !== '' ? s($val) : $dash;
 
-            case 'finalgrade':
-                if ($row->finalgrade === null || $row->finalgrade === '') {
-                    return $dash;
-                }
-                return number_format((float)$row->finalgrade, 2);
+            case 'nota':
+                return $this->format_nota($row->finalgrade ?? null, $row->grademax ?? null);
         }
+
         return parent::other_cols($colname, $row);
     }
 
+    /**
+     * Formatea la fila para exportación
+     *
+     * @param object $row Fila de datos
+     * @return array Array con datos formateados para exportación
+     */
     protected function format_export_row($row) {
         $dash = '-';
-        $finalgrade = ($row->finalgrade === null || $row->finalgrade === '') ? $dash : number_format((float)$row->finalgrade, 2);
 
         return [
-            'groupname'   => isset($row->groupname) && $row->groupname !== '' && $row->groupname !== '-' ? (string)$row->groupname : $dash,
-            'coursename'  => isset($row->coursename) && $row->coursename !== '' ? (string)$row->coursename : $dash,
-            'courseshort' => isset($row->courseshort) && $row->courseshort !== '' ? (string)$row->courseshort : $dash,
-            'lastname'    => isset($row->lastname) && $row->lastname !== '' ? (string)$row->lastname : $dash,
-            'firstname'   => isset($row->firstname) && $row->firstname !== '' ? (string)$row->firstname : $dash,
-            'dni'         => isset($row->dni) && $row->dni !== '' ? (string)$row->dni : $dash,
-            'finalgrade'  => $finalgrade,
+            'proyecto' => $this->format_proyecto($row->groupname ?? ''),
+            'dni'      => isset($row->dni) && $row->dni !== '' ? (string)$row->dni : $dash,
+            'nota'     => $this->format_nota($row->finalgrade ?? null, $row->grademax ?? null),
         ];
     }
 
+    /**
+     * Extrae el código del proyecto del nombre del grupo
+     * Formato esperado: G_DD/MM/YYYY_CXXXXXXXX
+     * Si no sigue el formato, devuelve el nombre completo del grupo
+     *
+     * @param string $groupname Nombre del grupo
+     * @return string Código del proyecto o nombre del grupo
+     */
+    private function format_proyecto($groupname) {
+        if (empty($groupname)) {
+            return '-';
+        }
+
+        // Intentar extraer el código del proyecto
+        $parts = explode('_', $groupname);
+
+        // Verificar si sigue la estructura esperada: G_fecha_código
+        if (count($parts) == 5) {
+            // El código del proyecto es la última parte
+            $projectcode = end($parts);
+
+            // Validar que el código empiece con 'C' seguido de números
+            if (preg_match('/^C\d+$/', $projectcode)) {
+                return $projectcode;
+            }
+        }
+
+        // Si no sigue la estructura, devolver el nombre completo del grupo
+        return $groupname;
+    }
+
+    /**
+     * Formatea la nota final del usuario
+     * Normaliza a escala de 20 y redondea a entero
+     *
+     * @param float|null $finalgrade Nota final del usuario
+     * @param float|null $grademax Nota máxima del curso
+     * @return string Nota formateada o guión si no hay nota
+     */
+    private function format_nota($finalgrade, $grademax) {
+        if ($finalgrade === null || $finalgrade === '' || $grademax === null || $grademax == 0) {
+            return '-';
+        }
+
+        // Normalizar a escala de 20 si es necesario
+        $nota = (float)$finalgrade;
+        $max = (float)$grademax;
+
+        if ($max != 20) {
+            $nota = ($nota / $max) * 20;
+        }
+
+        // Redondear a entero
+        return (string)round($nota);
+    }
+
+    /**
+     * Convierte una cadena de texto en tokens
+     * Separa por comas, saltos de línea o punto y coma
+     *
+     * @param string $text Texto a procesar
+     * @return array Array de tokens
+     */
     private function explode_tokens(string $text): array {
         $raw = preg_split('/[,\n;]+/', (string)$text);
         $tokens = [];
