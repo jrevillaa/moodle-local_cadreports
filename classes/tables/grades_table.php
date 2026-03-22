@@ -81,7 +81,6 @@ class grades_table extends table_base {
             LEFT JOIN {grade_grades} gg   ON gg.itemid = gi.id AND gg.userid = u.id
         ";
 
-        // ✅ NUEVO: Excluir usuarios sin nota final
         $where = "c.id <> :siteid AND u.deleted = 0 AND ue.status = 0";
         $params = ['siteid' => SITEID];
 
@@ -117,17 +116,11 @@ class grades_table extends table_base {
         } else {
             // Modo bycourse: filtrar por cursos
             if (!empty($this->filters['courseids']) && is_array($this->filters['courseids'])) {
-                // ✅ CORREGIDO: Detectar si se seleccionó "Todos los cursos" (ID -1)
-                if (!in_array(-1, $this->filters['courseids'])) {
-                    $courseids = array_values(array_filter($this->filters['courseids'], function($id) {
-                        return is_numeric($id) && $id > 0;
-                    }));
-                    
-                    if ($courseids) {
-                        list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cid');
-                        $where .= " AND c.id {$insql}";
-                        $params = array_merge($params, $inparams);
-                    }
+                $courseids = array_values(array_filter($this->filters['courseids'], 'is_numeric'));
+                if ($courseids) {
+                    list($insql, $inparams) = $DB->get_in_or_equal($courseids, SQL_PARAMS_NAMED, 'cid');
+                    $where .= " AND c.id {$insql}";
+                    $params = array_merge($params, $inparams);
                 }
             }
 

@@ -212,33 +212,169 @@ $string['username'] = 'Usuario';
 $string['cadreports:view'] = 'Ver reportes CAD';
 $string['cadreports:export'] = 'Exportar reportes CAD';
 
-
-// Main menu
+// Menú principal
 $string['cadreports'] = 'Reportes CAD';
+
+// Reportes disponibles
+$string['accessreport'] = 'Accesos y Dedicación';
+$string['gradesreport'] = 'Registro de Notas';
+$string['quizreport'] = 'Resumen de Cuestionarios';
 $string['activityreport'] = 'Actividad de Usuarios';
 $string['accessreport'] = 'Reporte de Accesos de participantes';
 $string['forumreport'] = 'Reporte de Foros de participantes';
 $string['gradesreport'] = 'Reporte de Notas del Alumno';
 $string['quizreport'] = 'Resumen de Cuestionarios';
 
-//Foro
-$string['participationstatus'] = 'Estados de Particiación';
-$string['participated'] = 'Participó';
-$string['notparticipated'] = 'No Participó';
-$string['respondedbycstaff'] = 'Respondido por el Profesor';
-$string['email'] = 'Correo';
+// Formularios
+$string['filters'] = 'Filtros';
+$string['course'] = 'Curso';
+$string['allcourses'] = 'Todos los cursos';
+$string['group'] = 'Grupo';
+$string['allgroups'] = 'Todos los grupos';
+$string['nogroup'] = 'Sin grupo';
+$string['datefrom'] = 'Fecha desde';
+$string['dateto'] = 'Fecha hasta';
+$string['generatereport'] = 'Generar reporte';
+$string['selectfilters'] = 'Selecciona al menos un filtro para generar el reporte';
+
+// Tabla - Columnas comunes
+$string['order'] = 'Orden';
+$string['coursefullname'] = 'Nombre largo del curso';
+$string['courseshortname'] = 'Nombre corto del curso';
+$string['firstname'] = 'Nombres';
+$string['lastname'] = 'Apellidos';
+$string['username'] = 'Usuario';
+$string['email'] = 'Email';
+
+// Columnas específicas del reporte de accesos
+$string['dedication'] = 'Dedicación';
+
+// Exportación
+$string['exportoptions'] = 'Opciones de exportación';
+$string['downloadexcel'] = 'Descargar Excel';
+$string['downloadcsv'] = 'Descargar CSV';
+
+// Errores
+$string['error_daterange'] = 'La fecha hasta debe ser posterior a la fecha desde';
+$string['error_nofilters'] = 'Debe seleccionar al menos un filtro';
+
+// Privacidad
+$string['privacy:metadata'] = 'El plugin Reportes CAD no almacena datos personales, solo muestra información existente en Moodle.';
+
+// Sección principal
+$string['cadreports'] = 'Reportes CAD';
+$string['reports'] = 'Reportes';
+$string['settings'] = 'Configuración';
+
+// Configuraciones
+$string['session_gap'] = 'Tiempo máximo de sesión';
+$string['session_gap_desc'] = 'Tiempo máximo en segundos entre clicks para considerar que el usuario sigue en la misma sesión de estudio.';
+$string['records_per_page'] = 'Registros por página';
+$string['records_per_page_desc'] = 'Número máximo de registros a mostrar por página en los reportes.';
+
+// Columnas específicas del reporte de accesos
+$string['dedication'] = 'Dedicación';
+$string['courseaccesses'] = 'Accesos al Curso'; // ✅ NUEVO
+$string['lastcourseaccess'] = 'Último Acceso'; // ✅ NUEVO
+
+// ✅ AGREGADO: Formato de duración detallada
+$string['durationformat_detailed'] = '{$a->days} días, {$a->hours} horas, {$a->minutes} minutos, {$a->seconds} segundos';
+
+
+// Strings específicos del reporte de notas
+$string['activityname'] = 'Nombre de Actividad';
+$string['activitytype'] = 'Tipo de Actividad';
+$string['allactivities'] = 'Todas las actividades';
+$string['maxgrade'] = 'Nota Máxima';
+$string['gradefinal'] = 'Nota';
+$string['percentage'] = 'Porcentaje';
+$string['timemodified'] = 'Fecha/Hora Modificación';
+$string['modifiedby'] = 'Modificado por';
+$string['finalgrade'] = 'Nota Final del Curso';
+$string['manualgrade'] = 'Calificación Manual';
+$string['modifiedonly'] = 'Solo calificaciones modificadas';
+$string['modifiedonly_help'] = 'Mostrar únicamente las calificaciones que han sido modificadas manualmente';
+
+// Strings para multiselección
+$string['courses'] = 'Cursos';
+$string['groups'] = 'Grupos';
+$string['selectcourses'] = 'Buscar y seleccionar cursos...';
+$string['selectgroups'] = 'Buscar y seleccionar grupos...';
+$string['allactivitiesinfo'] = 'Este reporte muestra TODAS las actividades y la nota final del curso para los cursos seleccionados.';
+
+// Strings para multiselect
+
+$string['selectcoursefirst'] = 'Selecciona primero uno o más cursos';
+$string['nogroups'] = 'No hay grupos para los cursos seleccionados';
+$string['errorloadinggroups'] = 'Error cargando grupos';
+
+
+// Strings específicos del reporte de notas
+$string['activityidnumber'] = 'ID de Actividad'; // ✅ NUEVO
+
+$string['quizreport'] = 'Resumen de Cuestionarios';
+$string['quizreportinfo'] = 'Este reporte muestra información detallada sobre los intentos de cuestionarios de los estudiantes.';
+$string['quizname'] = 'Nombre del Cuestionario';
+$string['quizidnumber'] = 'ID del Cuestionario';
+$string['attemptsmade'] = 'Intentos Realizados';
+$string['attemptsallowed'] = 'Intentos Permitidos';
+$string['bestgrade'] = 'Mejor Nota';
+$string['latestattempt'] = 'Último Intento';
+
+// ... código existente ...
+
+// Strings específicos del reporte de actividad de usuarios
+$string['activityreport'] = 'Actividad de Usuarios';
+$string['activityreportinfo'] = 'Este reporte muestra todas las acciones realizadas por los usuarios en los cursos seleccionados.';
+$string['action'] = 'Acción';
+$string['component'] = 'Componente';
+$string['target'] = 'Objetivo';
+$string['targetname'] = 'Nombre del Objetivo';
+$string['eventdescription'] = 'Descripción';
+$string['datetime'] = 'Fecha y Hora';
+
+// Strings para filtros
+$string['allactions'] = 'Todas las acciones';
+$string['actionviewed'] = 'Visto';
+$string['actioncreated'] = 'Creado';
+$string['actionupdated'] = 'Actualizado';
+$string['actionsubmitted'] = 'Enviado';
+$string['actiondeleted'] = 'Eliminado';
+$string['actionloggedin'] = 'Inició Sesión';
+$string['actionloggedout'] = 'Cerró Sesión';
+$string['actionfilter'] = 'Filtrar por Acción';
+
+$string['allcomponents'] = 'Todos los componentes';
+$string['componentcore'] = 'Sistema';
+$string['componentquiz'] = 'Cuestionario';
+$string['componentforum'] = 'Foro';
+$string['componentassign'] = 'Tarea';
+$string['componentscorm'] = 'SCORM';
+$string['componentlesson'] = 'Lección';
+$string['componentfilter'] = 'Filtrar por Componente';
+
+$string['forumreport'] = 'Participación en Foros';
+$string['forumreportinfo'] = 'Este reporte muestra la participación de estudiantes en foros y las respuestas del personal docente/administrativo.';
+$string['forumname'] = 'Nombre del Foro';
+$string['forumidnumber'] = 'ID del Foro';
 $string['participationdate'] = 'Fecha de Participación';
 $string['staffresponsestatus'] = 'Estado de Participación del Profesor';
 $string['staffresponsedate'] = 'Fecha de Participación del Profesor';
 
-// Forum notifications
-$string['forum_notifications_heading'] = 'Notificaciones de Participación en Foros';
-$string['forum_notifications_heading_desc'] = 'Configurar notificaciones automáticas por correo cuando alumnos participan en foros';
-$string['forum_notifications_enabled'] = 'Habilitar notificaciones de foros';
-$string['forum_notifications_enabled_desc'] = 'Enviar notificaciones por correo cuando alumnos crean posts en foros';
-$string['forum_notification_emails'] = 'Destinatarios de notificaciones';
-$string['forum_notification_emails_desc'] = 'Direcciones de correo para recibir notificaciones (una por línea o separadas por comas).<br>Ejemplo:<br>admin@ejemplo.com<br>profesor@ejemplo.com';
-$string['forum_notification_subject'] = '{$a->student} participó en el foro: {$a->forum}';
-$string['new_discussion'] = 'Nueva discusión';
-$string['reply_to_discussion'] = 'Respuesta a discusión';
+// Strings para filtros de participación
+$string['allparticipation'] = 'Toda la participación';
+$string['participated'] = 'Con participación';
+$string['notparticipated'] = 'Sin participación';
+$string['respondedbycstaff'] = 'Respondido por staff';
+$string['participationstatus'] = 'Estado de Participación';
 
+
+// Extras requeridos por el formulario de Registro de Notas.
+
+$string['filtermode'] = 'Modo de filtrado';
+$string['filtermode_bycourse'] = 'Por cursos y/o grupos';
+$string['filtermode_byuser'] = 'Por usuarios';
+
+$string['userquery'] = 'Usuarios (username y/o correo)';
+$string['userquery_help'] = "Escribe uno o más usernames o correos.\nPuedes separar varios con comas o saltos de línea.\nEjemplo:\nalumno01\nalumno02@example.edu, p.alvarez";
+$string['userquery_placeholder'] = "Ejemplo:\nalumno01, alumno02\no\nalumno01@example.edu";
